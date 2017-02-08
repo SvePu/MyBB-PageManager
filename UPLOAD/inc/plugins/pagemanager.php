@@ -33,7 +33,6 @@ if(THIS_SCRIPT=='misc.php')
 	}
 }
 
-
 $plugins->add_hook('misc_start','pagemanager');
 $plugins->add_hook('build_friendly_wol_location_end','pagemanager_online');
 $plugins->add_hook('admin_config_action_handler','pagemanager_admin_action');
@@ -49,11 +48,11 @@ function pagemanager_info()
 	(
 		'name'=>$lang->pagemanager_info_name,
 		'description'=>$lang->pagemanager_info_description,
-		'website'=>'http://mods.mybb.com/view/page-manager',
+		'website'=>'https://github.com/SvePu/MyBB-PageManager',
 		'author'=>'Sebastian Wunderlich',
 		'version'=>'1.5.2',
-		'guid'=>'9df7fb9187de42dd35e99dffb5739387',
-		'compatibility'=>'16*',
+		'codename'=>'mybbpagemanager',
+		'compatibility'=>'18*',
 	);
 }
 
