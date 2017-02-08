@@ -200,13 +200,13 @@ function pagemanager_admin()
 				}
 				if($pages['enabled'])
 				{
-					$status_icon='<img src="styles/'.$page->style.'/images/icons/bullet_on.gif" alt="'.$lang->pagemanager_main_table_enabled.'" title="'.$lang->pagemanager_main_table_enabled.'" style="vertical-align:middle;" /> ';
+					$status_icon='<img src="styles/'.$page->style.'/images/icons/bullet_on.png" alt="'.$lang->pagemanager_main_table_enabled.'" title="'.$lang->pagemanager_main_table_enabled.'" style="vertical-align:middle;" /> ';
 					$status_lang=$lang->pagemanager_main_control_disable;
 					$status_action='disable';
 				}
 				else
 				{
-					$status_icon='<img src="styles/'.$page->style.'/images/icons/bullet_off.gif" alt="'.$lang->pagemanager_main_table_disabled.'" title="'.$lang->pagemanager_main_table_disabled.'" style="vertical-align:middle;" /> ';
+					$status_icon='<img src="styles/'.$page->style.'/images/icons/bullet_off.png" alt="'.$lang->pagemanager_main_table_disabled.'" title="'.$lang->pagemanager_main_table_disabled.'" style="vertical-align:middle;" /> ';
 					$status_lang=$lang->pagemanager_main_control_enable;
 					$status_action='enable';
 				}
