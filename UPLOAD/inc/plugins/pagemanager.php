@@ -374,11 +374,23 @@ function pagemanager_admin()
 		$admin_options=$db->fetch_array($queryadmin);
 		if($admin_options['codepress']!=0)
 		{
-			$page->extra_header='<link type="text/css" href="./jscripts/codepress/languages/codepress-mybb.css" rel="stylesheet" id="cp-lang-style" />
-<script type="text/javascript" src="./jscripts/codepress/codepress.js"></script>
-<script type="text/javascript">
-	CodePress.language=\'mybb\';
-</script>';
+			$page->extra_header='<link href="./jscripts/codemirror/lib/codemirror.css" rel="stylesheet">
+<link href="./jscripts/codemirror/theme/mybb.css?ver=1804" rel="stylesheet">
+<script src="./jscripts/codemirror/lib/codemirror.js"></script>
+<script src="./jscripts/codemirror/mode/xml/xml.js"></script>
+<script src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
+<script src="./jscripts/codemirror/mode/css/css.js"></script>
+<script src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script src="./jscripts/codemirror/mode/clike/clike.js"></script>
+<script src="./jscripts/codemirror/mode/php/php.js"></script>
+<link href="./jscripts/codemirror/addon/dialog/dialog-mybb.css" rel="stylesheet">
+<script src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
+<script src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
+<script src="./jscripts/codemirror/addon/search/search.js?ver=1808"></script>
+<script src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
+<script src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
+<script src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
+<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">';
 		}
 		$page->add_breadcrumb_item($lang->pagemanager_info_name,$sub_tabs['pagemanager']['link']);
 		$page->add_breadcrumb_item($sub_tabs['pagemanager_add']['title']);
@@ -397,7 +409,7 @@ function pagemanager_admin()
 		$form_container->output_row($lang->pagemanager_edit_form_name.' <em>*</em>',$lang->pagemanager_edit_form_name_description,$form->generate_text_box('name',$form_array['name'],array('id'=>'name')),'name');
 		$form_container->output_row($lang->pagemanager_edit_form_url.' <em>*</em>',$lang->pagemanager_edit_form_url_description,$form->generate_text_box('url',$form_array['url'],array('id'=>'url')),'url');
 		$form_container->output_row($lang->pagemanager_edit_form_framework,$lang->pagemanager_edit_form_framework_description,$form->generate_yes_no_radio('framework',$form_array['framework']));
-		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','class'=>'codepress mybb','style'=>'width:100%;height:500px;')));
+		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','style'=>'width:100%;height:500px;')));
 		$form_container->output_row($lang->pagemanager_edit_form_online,$lang->pagemanager_edit_form_online_description,$form->generate_yes_no_radio('online',$form_array['online']));
 		$form_container->output_row($lang->pagemanager_edit_form_enable,$lang->pagemanager_edit_form_enable_description,$form->generate_yes_no_radio('enabled',$form_array['enabled']));
 		$form_container->end();
@@ -407,16 +419,17 @@ function pagemanager_admin()
 		if($admin_options['codepress']!=0)
 		{
 			echo '<script type="text/javascript">
-	Event.observe(\'add_template\',\'submit\',function()
-	{
-		if($(\'template_cp\'))
-		{
-			var area=$(\'template_cp\');
-			area.id=\'template\';
-			area.value=template.getCode();
-			area.disabled=false;
-		}
-	});
+var editor = CodeMirror.fromTextArea(document.getElementById("template"), {
+	lineNumbers: true,
+	lineWrapping: true,
+	foldGutter: true,
+	gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+	viewportMargin: Infinity,
+	indentWithTabs: true,
+	indentUnit: 4,
+	mode: "php",
+	theme: "mybb"
+});
 </script>';
 		}
 		$page->output_footer();
@@ -535,11 +548,23 @@ function pagemanager_admin()
 		);
 		if($admin_options['codepress']!=0)
 		{
-			$page->extra_header='<link type="text/css" href="./jscripts/codepress/languages/codepress-mybb.css" rel="stylesheet" id="cp-lang-style" />
-<script type="text/javascript" src="./jscripts/codepress/codepress.js"></script>
-<script type="text/javascript">
-	CodePress.language=\'mybb\';
-</script>';
+			$page->extra_header='<link href="./jscripts/codemirror/lib/codemirror.css" rel="stylesheet">
+<link href="./jscripts/codemirror/theme/mybb.css?ver=1804" rel="stylesheet">
+<script src="./jscripts/codemirror/lib/codemirror.js"></script>
+<script src="./jscripts/codemirror/mode/xml/xml.js"></script>
+<script src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
+<script src="./jscripts/codemirror/mode/css/css.js"></script>
+<script src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script src="./jscripts/codemirror/mode/clike/clike.js"></script>
+<script src="./jscripts/codemirror/mode/php/php.js"></script>
+<link href="./jscripts/codemirror/addon/dialog/dialog-mybb.css" rel="stylesheet">
+<script src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
+<script src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
+<script src="./jscripts/codemirror/addon/search/search.js?ver=1808"></script>
+<script src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
+<script src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
+<script src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
+<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">';
 		}
 		$page->add_breadcrumb_item($lang->pagemanager_info_name,$sub_tabs['pagemanager']['link']);
 		$page->add_breadcrumb_item($sub_tabs['pagemanager_edit']['title']);
@@ -558,7 +583,7 @@ function pagemanager_admin()
 		$form_container->output_row($lang->pagemanager_edit_form_name.' <em>*</em>',$lang->pagemanager_edit_form_name_description,$form->generate_text_box('name',$form_array['name'],array('id'=>'name')),'name');
 		$form_container->output_row($lang->pagemanager_edit_form_url.' <em>*</em>',$lang->pagemanager_edit_form_url_description,$form->generate_text_box('url',$form_array['url'],array('id'=>'url')),'url');
 		$form_container->output_row($lang->pagemanager_edit_form_framework,$lang->pagemanager_edit_form_framework_description,$form->generate_yes_no_radio('framework',$form_array['framework']));
-		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','class'=>'codepress mybb','style'=>'width:100%;height:500px;')));
+		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','style'=>'width:100%;height:500px;')));
 		$form_container->output_row($lang->pagemanager_edit_form_online,$lang->pagemanager_edit_form_online_description,$form->generate_yes_no_radio('online',$form_array['online']));
 		$form_container->output_row($lang->pagemanager_edit_form_enable,$lang->pagemanager_edit_form_enable_description,$form->generate_yes_no_radio('enabled',$form_array['enabled']));
 		$form_container->end();
@@ -569,16 +594,17 @@ function pagemanager_admin()
 		if($admin_options['codepress']!=0)
 		{
 			echo '<script type="text/javascript">
-	Event.observe(\'edit_template\',\'submit\',function()
-	{
-		if($(\'template_cp\'))
-		{
-			var area=$(\'template_cp\');
-			area.id=\'template\';
-			area.value=template.getCode();
-			area.disabled=false;
-		}
-	});
+var editor = CodeMirror.fromTextArea(document.getElementById("template"), {
+	lineNumbers: true,
+	lineWrapping: true,
+	foldGutter: true,
+	gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+	viewportMargin: Infinity,
+	indentWithTabs: true,
+	indentUnit: 4,
+	mode: "php",
+	theme: "mybb"
+});
 </script>';
 		}
 		$page->output_footer();
