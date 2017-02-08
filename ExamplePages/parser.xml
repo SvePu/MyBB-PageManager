@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pagemanager version="1.4" xmlns="http://mods.mybboard.net/view/page-manager">
+	<page>
+		<name><![CDATA[Parser Test Page]]></name>
+		<url><![CDATA[parser]]></url>
+		<template><![CDATA[<?php
+
+global $headerinclude, $header, $theme, $footer;
+
+require_once MYBB_ROOT.'inc/class_parser.php';
+
+$parser = new postParser;
+
+$message = '[b]MyBB[/b] is a free bulletin board system software package developed by the MyBB Group. It is written in PHP and licensed as free software under the [color=#ff0000]GNU General Public License[/color], version 3. :)';
+
+$options = array(
+	'allow_mycode' => 1,
+	'allow_smilies' => 1
+);
+
+$message = $parser->parse_message($message, $options);
+
+$template = '<html>
+<head>
+<title>'.$pages['name'].'</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<table border="0" cellspacing="'.$theme['borderwidth'].'" cellpadding="'.$theme['tablespace'].'" class="tborder">
+<thead>
+<tr>
+<td class="thead">
+<strong>'.$pages['name'].'</strong>
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="trow1">{$message}</td>
+</tr>
+</tbody>
+</table>
+<br />
+{$footer}
+</body>
+</html>';
+
+$template = str_replace("\'", "'", addslashes($template));
+
+add_breadcrumb($pages['name']);
+
+eval("\$page = \"".$template."\";");
+
+output_page($page);
+
+?>]]></template>
+	</page>
+</pagemanager>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pagemanager version="1.4.2" xmlns="http://mods.mybboard.net/view/page-manager">
+	<page>
+		<name><![CDATA[Usermap]]></name>
+		<url><![CDATA[usermap]]></url>
+		<template><![CDATA[<?php
+
+$key = '';
+$location = 'United States';
+$zoom = 4;
+$fid = 1;
+$datacache = './cache/coords';
+
+if(!$mybb->usergroup['canviewprofiles'])
+{
+	error_no_permission();
+}
+
+global $headerinclude, $header, $theme, $footer, $cache, $templates;
+
+require_once MYBB_ROOT.'inc/class_xml.php';
+require_once MYBB_ROOT.'inc/functions_image.php';
+
+$contents = fetch_remote_file('http://maps.google.com/maps/geo?q=' . rawurlencode($location) . '&output=xml');
+$parser = new XMLParser($contents);
+$tree = $parser->get_tree();
+
+if($tree['kml']['Response']['Placemark']['Point']['coordinates']['value'])
+{
+	$location = explode(',', $tree['kml']['Response']['Placemark']['Point']['coordinates']['value']);
+}
+else
+{
+	$location = array(0, 0);
+	$zoom = 2;
+}
+
+if(!file_exists($datacache) || time()-filemtime($datacache) > 169200 || ($mybb->usergroup['cancp'] && intval($mybb->input['update']) == 1))
+{
+	$usergroups_cache = $cache->read('usergroups');
+	$query = $db->simple_select("usertitles", "*", "", array('order_by' => 'posts', 'order_dir' => 'DESC'));
+	while($usertitle = $db->fetch_array($query))
+	{
+		$usertitles_cache[$usertitle['posts']] = $usertitle;
+	}
+	$query = $db->query("
+		SELECT u.*, f.*
+		FROM ".TABLE_PREFIX."users u
+		LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
+		WHERE f.fid" . $fid . " != ''
+		AND u.usergroup NOT IN (5, 7)
+	");
+
+	$usercache = array();
+
+	while($user = $db->fetch_array($query))
+	{
+		$user['username'] = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
+
+		$user['profilelink'] = build_profile_link($user['username'], $user['uid']);
+
+		if(!$user['displaygroup'])
+		{
+			$user['displaygroup'] = $user['usergroup'];
+		}
+		$usergroup = $usergroups_cache[$user['displaygroup']];
+		
+		if(!empty($usergroup['image']))
+		{
+			if(!empty($mybb->user['language']))
+			{
+				$language = $mybb->user['language'];
+			}
+			else
+			{
+				$language = $mybb->settings['bblanguage'];
+			}
+			$usergroup['image'] = str_replace("{lang}", $language, $usergroup['image']);
+			$usergroup['image'] = str_replace("{theme}", $theme['imgdir'], $usergroup['image']);
+			$usergroup['groupimage'] = '<img src="' . $usergroup['image'] . '" alt="' . $usergroup['title'] . '" title="' . $usergroup['title'] . '" />';
+		}
+
+		$has_custom_title = 0;
+		if(trim($user['usertitle']) != "")
+		{
+			$has_custom_title = 1;
+		}
+
+		if($usergroup['usertitle'] != "" && !$has_custom_title)
+		{
+			$user['usertitle'] = $usergroup['usertitle'];
+		}
+		elseif(is_array($usertitles_cache) && !$usergroup['usertitle'])
+		{
+			foreach($usertitles_cache as $posts => $titleinfo)
+			{
+				if($user['postnum'] >= $posts)
+				{
+					if(!$has_custom_title)
+					{
+						$user['usertitle'] = $titleinfo['title'];
+					}
+					$user['stars'] = $titleinfo['stars'];
+					$user['starimage'] = $titleinfo['starimage'];
+					break;
+				}
+			}
+		}
+
+		if($usergroup['stars'])
+		{
+			$user['stars'] = $usergroup['stars'];
+		}
+
+		if(!$user['starimage'])
+		{
+			$user['starimage'] = $usergroup['starimage'];
+		}
+		$user['starimage'] = str_replace("{theme}", $theme['imgdir'], $user['starimage']);
+
+		for($i = 0; $i < $user['stars']; ++$i)
+		{
+			$user['userstars'] .= "<img src=\"".$user['starimage']."\" border=\"0\" alt=\"*\" />";
+		}
+
+		if($user['userstars'] && $usergroup['groupimage'])
+		{
+			$user['userstars'] = "<br />".$user['userstars'];
+		}
+
+		if($user['avatar'] != '')
+		{
+			$user['avatar'] = htmlspecialchars_uni($user['avatar']);
+			$avatar_dimensions = explode("|", $user['avatardimensions']);
+			
+			if($avatar_dimensions[0] && $avatar_dimensions[1])
+			{
+				list($max_width, $max_height) = explode("x", my_strtolower($mybb->settings['memberlistmaxavatarsize']));
+				if($avatar_dimensions[0] > $max_width || $avatar_dimensions[1] > $max_height)
+				{
+					$scaled_dimensions = scale_image($avatar_dimensions[0], $avatar_dimensions[1], $max_width, $max_height);
+					$avatar_width_height = "width=\"{$scaled_dimensions['width']}\" height=\"{$scaled_dimensions['height']}\"";
+				}
+				else
+				{
+					$avatar_width_height = "width=\"{$avatar_dimensions[0]}\" height=\"{$avatar_dimensions[1]}\"";	
+				}
+			}
+
+			$user['avatar'] = '<img src="' . $user['avatar'] . '" alt="" ' . $avatar_width_height . ' />';
+		}
+		else
+		{
+			$user['avatar'] = "";
+		}
+
+		$html = '<table><tr><td>' . $user['avatar'] . '</td><td>' . $user['profilelink'] . '<br /><span class="smalltext">' . $user['usertitle'] . '<br />' . $usergroup['groupimage'] . $user['userstars'] . '</span></td></tr></table>';
+
+		$home = strtolower($user['fid' . $fid]);
+
+		if(isset($usercache[$home]))
+		{
+			$usercache[$home] .= '<hr>'.$html;
+		}
+		else
+		{
+			$usercache[$home] = $html;
+		}
+	}
+
+	$coordscache = array();
+
+	foreach($usercache as $index => $value)
+	{
+		$contents = fetch_remote_file('http://maps.google.com/maps/geo?q=' . rawurlencode($index) . '&output=xml');
+		$parser = new XMLParser($contents);
+		$tree = $parser->get_tree();
+
+		sleep(1);
+		
+		if($tree['kml']['Response']['Placemark']['Point']['coordinates']['value'])
+		{
+			if(isset($coordscache[$tree['kml']['Response']['Placemark']['Point']['coordinates']['value']]))
+			{
+				$coordscache[$tree['kml']['Response']['Placemark']['Point']['coordinates']['value']] .= '<hr>'.$value;
+			}
+			else
+			{
+				$coordscache[$tree['kml']['Response']['Placemark']['Point']['coordinates']['value']] = $value;
+			}
+		}
+	}
+
+	file_put_contents($datacache, serialize($coordscache));
+}
+else
+{
+	$coordscache = unserialize(file_get_contents($datacache));
+}
+
+$run = 1;
+
+foreach($coordscache as $index => $value)
+{
+	$point = explode(',', $index);
+	$output .= '
+		var point' . $run . ' = new GLatLng(' . $point[1] . ',' . $point[0] . ');
+		var html' . $run . ' = "' . str_replace('"', "'", $value) . '";
+		var info' . $run . ' = new GMarker(point' . $run . ');
+		GEvent.addListener(info' . $run . ', "click", function() {
+			info' . $run . '.openInfoWindowHtml(html' . $run . ')
+		});
+		map.addOverlay(info' . $run . ');
+	';
+	$run++;
+}
+
+$template = '<html>
+<head>
+<title>' . $pages['name'] . '</title>
+{$headerinclude}
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=' . $key . '&amp;sensor=false" type="text/javascript"></script>
+<script type="text/javascript">
+' . html_entity_decode('&lt;!--/*--&gt;&lt;![CDATA[/*&gt;&lt;!--*/') . '
+function initialize() {
+	if (GBrowserIsCompatible()) {
+		var map = new GMap2(document.getElementById("map"));
+		map.setCenter(new GLatLng(' . $location[1] . ',' . $location[0] . '), ' . $zoom . ');
+	map.setUIToDefault();
+	{$output}
+	}
+}
+' . html_entity_decode('/*]]&gt;*/--&gt;') . '
+</script>
+</head>
+<body onload="initialize()" onunload="GUnload()">
+{$header}
+<table border="0" cellspacing="' . $theme['borderwidth'] . '" cellpadding="' . $theme['tablespace'] . '" class="tborder">
+<thead>
+<tr>
+<td class="thead">
+<strong>' . $pages['name'] . '</strong>
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="trow1" style="padding: 0;"><div id="map" style="width: 100%; height: 500px;"></div></td>
+</tr>
+</tbody>
+</table>
+<br />
+{$footer}
+</body>
+</html>';
+
+$template = str_replace("\'", "'", addslashes($template));
+
+add_breadcrumb($pages['name']);
+
+eval("\$page = \"" . $template . "\";");
+
+output_page($page);
+
+?>]]></template>
+	</page>
+</pagemanager>

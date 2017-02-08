@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pagemanager version="1.5.2" xmlns="http://mods.mybb.com/view/page-manager">
+	<page>
+		<name><![CDATA[Ban List]]></name>
+		<url><![CDATA[banlist]]></url>
+		<template><![CDATA[<?php
+
+global $headerinclude, $header, $theme, $footer, $lang;
+
+if(!$mybb->user['uid']) error_no_permission();
+
+$lang->load('modcp');
+
+$bannedquery = $db->simple_select("banned", "uid, admin, reason, dateline, lifted", "", array("order_by" => 'dateline', "order_dir" => 'DESC'));
+
+if ($db->num_rows($bannedquery) > 0)
+{
+	$bannedtablerows = "";
+	while ($ban = $db->fetch_array($bannedquery))
+	{
+		$banneduser = get_user($ban['uid']);
+		$banby = get_user($ban['admin']);
+
+		if ($ban['lifted'] > 0)
+			$unbandate = my_date($mybb->settings['dateformat'], $ban['lifted']);
+		else
+			$unbandate = $lang->never;
+
+		$bannedtablerows .= '<tr>
+		<td class="trow1">'. build_profile_link($banneduser['username'], $banneduser['uid']). '</td>
+		<td class="trow1">'. $ban['reason']. '</td>
+		<td class="trow1">'. build_profile_link($banby['username'], $banby['uid']). '</td>
+		<td class="trow1">'. my_date($mybb->settings['dateformat'], $ban['dateline']) .'</td>
+		<td class="trow1">'. $unbandate .'</td>
+		</tr>';
+	}
+}
+else
+{
+	$bannedtablerows = '<tr><td class="trow1" colspan="5" align="center">'. $lang->no_banned .'</td></tr>';
+}
+
+$template='<html>
+<head>
+<title>'.$pages['name'].'</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<table border="0" cellspacing="'.$theme['borderwidth'].'" cellpadding="'.$theme['tablespace'].'" class="tborder">
+<tr><td class="thead" colspan="5"><strong>{$lang->ban_banned}</strong></td></tr>
+<tr>
+<td class="tcat"><span class="smalltext"><strong>{$lang->username}</strong></span></td>
+<td class="tcat"><span class="smalltext"><strong>{$lang->reason}</strong></span></td>
+<td class="tcat"><span class="smalltext"><strong>{$lang->ban_bannedby}</strong></span></td>
+<td class="tcat"><span class="smalltext"><strong>{$lang->start_date}</strong></span></td>
+<td class="tcat"><span class="smalltext"><strong>{$lang->end_date}</strong></span></td>
+</tr>
+{$bannedtablerows}
+</table>
+{$footer}
+</body>
+</html>';
+
+$template=str_replace("\'", "'", addslashes($template));
+
+add_breadcrumb($pages['name']);
+
+eval("\$page=\"".$template."\";");
+
+output_page($page);
+
+?>]]></template>
+	</page>
+</pagemanager>

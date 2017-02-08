@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pagemanager version="1.4.4" xmlns="http://mods.mybboard.net/view/page-manager">
+	<page>
+		<name><![CDATA[Signature]]></name>
+		<url><![CDATA[signature]]></url>
+		<template><![CDATA[<?php
+
+global $lang, $cache;
+
+$lang->load('stats');
+
+$stats = $cache->read('stats');
+
+$img_width = 468;
+$img_height = 30;
+
+$border_color_outer = '#000000';
+$border_color_inner = '#ffffff';
+
+$gradient_start = '#035488';
+$gradient_end = '#026cb1';
+
+$color_top = '#ffffff';
+$color_bottom = '#fff6bf';
+
+$custom_text = false;
+
+$im = imagecreatetruecolor($img_width, $img_height);
+
+$gradient_start = hex2rgb($gradient_start);
+$gradient_end = hex2rgb($gradient_end);
+
+for($i = 0; $i < $img_height; $i++)
+{
+	$line_color = imagecolorallocate($im, max(0, $gradient_start['r']-((($gradient_end['r']-$gradient_start['r'])/-$img_height)*$i)), max(0, $gradient_start['g']-((($gradient_end['g']-$gradient_start['g'])/-$img_height)*$i)), max(0, $gradient_start['b']-((($gradient_end['b']-$gradient_start['b'])/-$img_height)*$i)));
+	imageline($im, 0, $i, $img_width, $i, $line_color);
+}
+
+if($border_color_outer)
+{
+	$border_color_outer = hex2rgb($border_color_outer);
+	$border_color_outer = imagecolorallocate($im, $border_color_outer['r'], $border_color_outer['g'], $border_color_outer['b']);
+	imagerectangle($im, 0, 0, $img_width-1, $img_height-1, $border_color_outer);
+}
+
+if($border_color_inner)
+{
+	$border_color_inner = hex2rgb($border_color_inner);
+	$border_color_inner = imagecolorallocate($im, $border_color_inner['r'], $border_color_inner['g'], $border_color_inner['b']);
+	imagerectangle($im, 1, 1, $img_width-2, $img_height-2, $border_color_inner);
+}
+
+$color_top = hex2rgb($color_top);
+$color_top = imagecolorallocate($im, $color_top['r'], $color_top['g'], $color_top['b']);
+
+$color_bottom = hex2rgb($color_bottom);
+$color_bottom = imagecolorallocate($im, $color_bottom['r'], $color_bottom['g'], $color_bottom['b']);
+
+$string_top = $mybb->settings['bbname'];
+
+if($custom_text)
+{
+	$string_top .= ' - '.$custom_text;
+}
+else
+{
+	$string_top .= ' - '.$mybb->settings['bburl'];
+}
+
+$string_bottom_users = $lang->members.' '.$stats['numusers'];
+$string_bottom_posts = $lang->posts.' '.$stats['numposts'];
+$string_bottom_threads = $lang->threads.' '.$stats['numthreads'];
+
+$padding_lr = 10;
+
+imagestring($im, 3, $padding_lr, 2, utf8_decode($string_top), $color_top);
+imagestring($im, 2, $padding_lr, 14, utf8_decode($string_bottom_users), $color_bottom);
+imagestring($im, 2, intval(($img_width-2*$padding_lr)/3), 14, utf8_decode($string_bottom_posts), $color_bottom);
+imagestring($im, 2, intval(($img_width-2*$padding_lr)/3*2), 14, utf8_decode($string_bottom_threads), $color_bottom);
+
+header('Content-type: image/png');
+header('Content-disposition: inline; filename="'.$mybb->settings['bbname'].'.png"');
+
+imagepng($im);
+imagedestroy($im);
+
+function hex2rgb($hex)
+{
+	$hex = ltrim($hex, '#');
+	$rgb['r'] = hexdec(substr($hex, 0, 2));
+	$rgb['g'] = hexdec(substr($hex, 2, 2));
+	$rgb['b'] = hexdec(substr($hex, 4));
+	return $rgb;
+}
+
+?>]]></template>
+	</page>
+</pagemanager>

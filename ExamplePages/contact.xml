@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pagemanager version="1.4.2" xmlns="http://mods.mybboard.net/view/page-manager">
+	<page>
+		<name><![CDATA[Contact]]></name>
+		<url><![CDATA[contact]]></url>
+		<template><![CDATA[<?php
+
+global $headerinclude, $header, $theme, $footer, $templates, $lang;
+
+$lang->load('member');
+$lang->load('messages');
+$lang->load('datahandler_user');
+
+$subject = htmlspecialchars_uni(trim($mybb->input['subject']));
+$message = htmlspecialchars_uni(trim($mybb->input['message']));
+
+if(!$mybb->user['uid'])
+{
+	$name = htmlspecialchars_uni(trim($mybb->input['name']));
+	$email = htmlspecialchars_uni(trim($mybb->input['email']));
+
+	$usertemplate = '<tr>
+<td width="40%" class="trow1"><strong>{$lang->full_name}</strong></td>
+<td width="60%" class="trow1"><input type="text" class="textbox" size="50" name="name" value="{$name}" /></td>
+</tr>
+<tr>
+<td width="40%" class="trow2"><strong>{$lang->email_address}</strong></td>
+<td width="60%" class="trow2"><input type="text" class="textbox" size="50" name="email" value="{$email}" /></td>
+</tr>';
+
+	$usertemplate = str_replace("\'", "'", addslashes($usertemplate));
+
+	eval("\$usertemplate = \"" . $usertemplate . "\";");
+}
+else
+{
+	$name = $mybb->user['username'];
+	$email = $mybb->user['email'];
+
+	eval("\$usertemplate = \"" . $templates->get('changeuserbox') . "\";");
+}
+
+if($mybb->input['action'] == 'do_email' && $mybb->request_method == 'post')
+{
+	verify_post_check($mybb->input['my_post_key']);
+
+	if(empty($name))
+	{
+		$errors[] = $lang->userdata_missing_username;
+	}
+	elseif(strpos($name, '<') !== false || strpos($name, '>') !== false || strpos($name, '&') !== false || my_strpos($name, '\\') !== false || strpos($name, ';') !== false || strpos($name, ',') !== false)
+	{
+		$errors[] = $lang->userdata_bad_characters_username;
+	}
+
+	if(empty($email))
+	{
+		$errors[] = $lang->userdata_missing_email;
+	}
+	elseif(!validate_email_format($email))
+	{
+		$errors[] = $lang->userdata_invalid_email_format;
+	}
+
+	if(empty($subject))
+	{
+		$errors[] = $lang->error_no_email_subject;
+	}
+
+	if(empty($message))
+	{
+		$errors[] = $lang->error_no_email_message;
+	}
+
+	if($mybb->settings['captchaimage'] == 1 && function_exists("imagepng") && !$mybb->user['uid'])
+	{
+		$imagehash = $db->escape_string($mybb->input['imagehash']);
+		$imagestring = $db->escape_string($mybb->input['imagestring']);
+		$query = $db->simple_select('captcha', '*', 'imagehash="' . $imagehash . '"'); 
+		$imgcheck = $db->fetch_array($query);
+		if(my_strtolower($imgcheck['imagestring']) != my_strtolower($imagestring) || !$imgcheck['imagehash'])
+		{
+			$errors[] = $lang->error_regimageinvalid;
+		}
+		$db->delete_query('captcha', 'imagehash="' . $imagehash . '"');
+	}
+
+	if(count($errors) == 0)
+	{
+		if($mybb->settings['mail_handler'] == 'smtp')
+		{
+			$from = $email;
+		}
+		else
+		{
+			$from = $name . ' <' . $email . '>';
+		}
+		my_mail($mybb->settings['adminemail'], '[' . $mybb->settings['bbname'] . ' ' . $pages['name'] . '] ' . $subject, $message, $from, '', '', false, 'text', '', $email);
+
+		redirect($mybb->settings['bburl'], $lang->redirect_emailsent);
+	}
+	else
+	{
+		$errors = inline_error($errors);
+	}
+}
+
+if($mybb->settings['captchaimage'] == 1 && function_exists('imagepng') && !$mybb->user['uid'])
+{
+	$randomstr = random_str(5);
+	$imagehash = md5(random_str(12));
+	$imagearray= array(
+		'imagehash' => $imagehash,
+		'imagestring' => $randomstr,
+		'dateline' => TIME_NOW
+	);
+	$db->insert_query('captcha', $imagearray);
+	eval("\$captcha = \"" . $templates->get('post_captcha') . "\";");
+}
+
+$template = '<html>
+<head>
+<title>' . $pages['name'] . '</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$errors}
+<form action="' . $_SERVER['REQUEST_URI'] . '" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<table border="0" cellspacing="' . $theme['borderwidth'] . '" cellpadding="' . $theme['tablespace'] . '" class="tborder">
+<thead>
+<tr>
+<td colspan="2" class="thead">
+<strong>' . $pages['name'] . '</strong>
+</td>
+</tr>
+</thead>
+<tbody>
+{$usertemplate}
+<tr>
+<td width="40%" class="trow1"><strong>{$lang->email_subject}</strong></td>
+<td width="60%" class="trow1"><input type="text" class="textbox" size="50" name="subject" value="{$subject}" /></td>
+</tr>
+<tr>
+<td valign="top" width="40%" class="trow2"><strong>{$lang->email_message}</strong></td>
+<td width="60%" class="trow2"><textarea cols="50" rows="10" name="message">{$message}</textarea></td>
+</tr>
+{$captcha}
+</tbody>
+</table>
+<br />
+<input type="hidden" name="action" value="do_email" />
+<div align="center"><input type="submit" class="button" value="{$lang->send_email}" /></div>
+</form>
+{$footer}
+</body>
+</html>';
+
+$template = str_replace("\'", "'", addslashes($template));
+
+add_breadcrumb($pages['name']);
+
+eval("\$page = \"" . $template . "\";");
+
+output_page($page);
+
+?>]]></template>
+	</page>
+</pagemanager>

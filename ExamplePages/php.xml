@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pagemanager version="1.4" xmlns="http://mods.mybboard.net/view/page-manager">
+	<page>
+		<name><![CDATA[PHP Test Page]]></name>
+		<url><![CDATA[php]]></url>
+		<template><![CDATA[<?php
+
+global $headerinclude, $header, $theme, $footer;
+
+$template='<html>
+<head>
+<title>'.$pages['name'].'</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<table border="0" cellspacing="'.$theme['borderwidth'].'" cellpadding="'.$theme['tablespace'].'" class="tborder">
+<thead>
+<tr>
+<td class="thead">
+<strong>'.$pages['name'].'</strong>
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="trow1">MyBB is a free bulletin board system software package developed by the MyBB Group. It is written in PHP and licensed as free software under the GNU General Public License, version 3.</td>
+</tr>
+</tbody>
+</table>
+<br />
+{$footer}
+</body>
+</html>';
+
+$template=str_replace("\'", "'", addslashes($template));
+
+add_breadcrumb($pages['name']);
+
+eval("\$page=\"".$template."\";");
+
+output_page($page);
+
+?>
+]]></template>
+	</page>
+</pagemanager>
