@@ -226,7 +226,7 @@ function pagemanager_admin()
 				{
 					$online_status=$lang->no;
 				}
-				$table->construct_cell($status_icon.'<strong><a href="'.$sub_tabs['pagemanager']['link'].'&amp;action=edit&amp;pid='.$pages['pid'].'">'.$pages['name'].'</a></strong><br /><small>'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'</small>',$highlight);
+				$table->construct_cell($status_icon.'<strong><a href="'.$sub_tabs['pagemanager']['link'].'&amp;action=edit&amp;pid='.$pages['pid'].'">'.$pages['name'].'</a></strong><br /><small>'.$lang->pagemanager_open_page.'<a href="'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'" target="_blank">'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'</a></small>',$highlight);
 				$table->construct_cell($pages['pid'],$highlight);
 				$table->construct_cell($framework_status,$highlight);
 				$table->construct_cell($online_status,$highlight);

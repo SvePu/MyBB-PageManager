@@ -19,6 +19,7 @@ $l['pagemanager_main_table_online']='Show online?';
 $l['pagemanager_main_table_modified']='Modified';
 $l['pagemanager_main_table_dateline']='{1}, {2}';
 $l['pagemanager_main_table_no_pages']='No additional pages exist at this time.';
+$l['pagemanager_open_page']='Open page: ';
 $l['pagemanager_main_control_edit']='Edit Page';
 $l['pagemanager_main_control_export']='Export Page';
 $l['pagemanager_main_control_enable']='Enable Page';
