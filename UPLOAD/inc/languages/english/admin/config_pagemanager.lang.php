@@ -3,7 +3,7 @@
 	Language admin file for MyBB-PageManager plugin for MyBB 1.8
 	Language: english
 	Copyright © 2017 Svepu
-	Last change: 2017-02-085
+	Last change: 2017-02-10
 */
 
 $l['pagemanager_info_name']='Page Manager';
@@ -19,7 +19,9 @@ $l['pagemanager_main_table_online']='Show online?';
 $l['pagemanager_main_table_modified']='Modified';
 $l['pagemanager_main_table_dateline']='{1}, {2}';
 $l['pagemanager_main_table_no_pages']='No additional pages exist at this time.';
-$l['pagemanager_open_page']='Open page: ';
+$l['pagemanager_main_open_page']='Open page: ';
+$l['pagemanager_main_page_disabled']='Page disabled - You can enable it in options!';
+$l['pagemanager_main_edit']='Edit: ';
 $l['pagemanager_main_control_edit']='Edit Page';
 $l['pagemanager_main_control_export']='Export Page';
 $l['pagemanager_main_control_enable']='Enable Page';

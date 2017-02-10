@@ -3,6 +3,7 @@
 /*
 Page Manager Plugin for MyBB
 Copyright (C) 2010 Sebastian Wunderlich
+Edited for MyBB 1.8 & maintained by Svepu
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,40 +21,56 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 if(!defined('IN_MYBB'))
 {
-	die();
+	die('This file cannot be accessed directly.');
 }
 
-if(THIS_SCRIPT=='misc.php')
+if(THIS_SCRIPT == 'misc.php')
 {
-	global $mybb;
-	$pagecache=$cache->read('pages');
-	if($mybb->input['page']&&isset($pagecache[$mybb->input['page']])&&$pagecache[$mybb->input['page']]['online']!=1)
+	global $mybb, $cache;
+	$pagecache = $cache->read('pages');
+	if($mybb->input['page'] && isset($pagecache[$mybb->input['page']]) && $pagecache[$mybb->input['page']]['online'] != 1)
 	{
 		define('NO_ONLINE',1);
 	}
 }
 
-$plugins->add_hook('misc_start','pagemanager');
-$plugins->add_hook('build_friendly_wol_location_end','pagemanager_online');
-$plugins->add_hook('admin_config_action_handler','pagemanager_admin_action');
-$plugins->add_hook('admin_config_menu','pagemanager_admin_menu');
-$plugins->add_hook('admin_config_permissions','pagemanager_admin_permissions');
-$plugins->add_hook('admin_load','pagemanager_admin');
+if(defined('IN_ADMINCP'))
+{
+	$plugins->add_hook('admin_config_action_handler','pagemanager_admin_action');
+	$plugins->add_hook('admin_config_menu','pagemanager_admin_menu');
+	$plugins->add_hook('admin_config_permissions','pagemanager_admin_permissions');
+	$plugins->add_hook('admin_load','pagemanager_admin');
+}
+else
+{
+	$plugins->add_hook('misc_start','pagemanager');
+	$plugins->add_hook('build_friendly_wol_location_end','pagemanager_online');
+}
 
 function pagemanager_info()
 {
 	global $lang;
 	$lang->load("config_pagemanager");
-	return array
+	
+	$editedby = '*Edited for MyBB 1.8 &amp; maintained by: <a href="https://community.mybb.com/user-91011.html" target="_blank">SvePu</a>';
+	$sources = '*Sources: <a href="https://github.com/SvePu/MyBB-PageManager" target="_blank">GitHub</a>';
+	
+	
+	$info = array
 	(
-		'name'=>$lang->pagemanager_info_name,
-		'description'=>$lang->pagemanager_info_description,
-		'website'=>'https://github.com/SvePu/MyBB-PageManager',
-		'author'=>'Sebastian Wunderlich',
-		'version'=>'1.5.2',
-		'codename'=>'mybbpagemanager',
-		'compatibility'=>'18*',
+		'name'			=>	$lang->pagemanager_info_name,
+		'description'	=>	$lang->pagemanager_info_description,
+		'website'		=>	'',
+		'author'		=>	'Sebastian "querschlaeger" Wunderlich',
+		'authorsite'	=>	'',
+		'version'		=>	'2.0.0',
+		'codename'		=>	'mybbpagemanager',
+		'compatibility'	=>	'18*'
 	);
+	
+	$info['description'] = $info['description'].'<br />'.$editedby.'<br />'.$sources;
+	
+	return $info;
 }
 
 function pagemanager_activate()
@@ -95,13 +112,23 @@ function pagemanager_is_installed()
 	if($db->table_exists('pages'))
 	{
 		$fields=$db->show_fields_from('pages');
-		$list=array();
-		$check=array('pid','name','url','framework','template','online','enabled','dateline');
+		$list = array();
+		$check = array
+		(
+			'pid',
+			'name',
+			'url',
+			'framework',
+			'template',
+			'online',
+			'enabled',
+			'dateline'
+		);
 		foreach($fields as $key=>$val)
 		{
 			array_push($list,$val['Field']);
 		}
-		$diff=array_diff($check,$list);
+		$diff = array_diff($check,$list);
 		if(empty($diff))
 		{
 			return true;
@@ -116,54 +143,60 @@ function pagemanager_uninstall()
 	$db->drop_table('pages');
 }
 
-function pagemanager_admin_action(&$action)
+function pagemanager_admin_action($action)
 {
-	$action['pagemanager']=array('active'=>'pagemanager');
+	$action['pagemanager'] = array
+	(
+		'active'=>'pagemanager'
+	);
+	return $action;
 }
 
-function pagemanager_admin_menu(&$sub_menu)
+function pagemanager_admin_menu($sub_menu)
 {
 	global $lang;
 	$lang->load("config_pagemanager");
 	end($sub_menu);
 	$key=(key($sub_menu))+10;
-	$sub_menu[$key]=array
+	$sub_menu[$key] = array
 	(
 		'id'=>'pagemanager',
 		'title'=>$lang->pagemanager_info_name,
 		'link'=>'index.php?module=config-pagemanager'
 	);
+	return $sub_menu;
 }
 
-function pagemanager_admin_permissions(&$admin_permissions)
+function pagemanager_admin_permissions($admin_permissions)
 {
 	global $lang;
 	$lang->load("config_pagemanager");
-	$admin_permissions['pagemanager']=$lang->pagemanager_can_manage_pages;
+	$admin_permissions['pagemanager'] = $lang->pagemanager_can_manage_pages;
+	return $admin_permissions;
 }
 
 function pagemanager_admin()
 {
 	global $mybb,$page,$db,$lang;
 	$lang->load("config_pagemanager");
-	if($page->active_action!='pagemanager')
+	if($page->active_action != 'pagemanager')
 	{
 		return false;
 	}
-	$info=pagemanager_info();
-	$sub_tabs['pagemanager']=array
+	$info = pagemanager_info();
+	$sub_tabs['pagemanager'] = array
 	(
 		'title'=>$lang->pagemanager_main_title,
 		'link'=>'index.php?module=config-pagemanager',
 		'description'=>$lang->pagemanager_main_description
 	);
-	$sub_tabs['pagemanager_add']=array
+	$sub_tabs['pagemanager_add'] = array
 	(
 		'title'=>$lang->pagemanager_add_title,
 		'link'=>'index.php?module=config-pagemanager&amp;action=add',
 		'description'=>$lang->pagemanager_add_description
 	);
-	$sub_tabs['pagemanager_import']=array
+	$sub_tabs['pagemanager_import'] = array
 	(
 		'title'=>$lang->pagemanager_import_title,
 		'link'=>'index.php?module=config-pagemanager&amp;action=import',
@@ -185,14 +218,14 @@ function pagemanager_admin()
 		$table->construct_header($lang->pagemanager_main_table_online);
 		$table->construct_header($lang->pagemanager_main_table_modified);
 		$table->construct_header($lang->controls);
-		$query=$db->simple_select('pages','*','',array('order_by'=>'name','order_dir'=>'ASC'));
+		$query=$db->simple_select('pages','*','', array('order_by'=>'name', 'order_dir'=>'ASC'));
 		if($db->num_rows($query)>0)
 		{
 			while($pages=$db->fetch_array($query))
 			{
 				if($mybb->input['highlight']==$pages['pid'])
 				{
-					$highlight=array('style'=>'background-color:#fffbd9');
+					$highlight = array('style'=>'background-color:#fffbd9');
 				}
 				else
 				{
@@ -203,12 +236,14 @@ function pagemanager_admin()
 					$status_icon='<img src="styles/'.$page->style.'/images/icons/page_active.png" alt="'.$lang->pagemanager_main_table_enabled.'" title="'.$lang->pagemanager_main_table_enabled.'" style="vertical-align:middle;" /> ';
 					$status_lang=$lang->pagemanager_main_control_disable;
 					$status_action='disable';
+					$pagelink = '<br /><small>'.$lang->pagemanager_main_open_page.'<a href="'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'" target="_blank">'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'</a></small>'; 
 				}
 				else
 				{
 					$status_icon='<img src="styles/'.$page->style.'/images/icons/page_inactive.png" alt="'.$lang->pagemanager_main_table_disabled.'" title="'.$lang->pagemanager_main_table_disabled.'" style="vertical-align:middle;" /> ';
 					$status_lang=$lang->pagemanager_main_control_enable;
 					$status_action='enable';
+					$pagelink = '<br /><span style="color:#f00">'.$lang->pagemanager_main_page_disabled.'</span>';
 				}
 				if($pages['framework'])
 				{
@@ -226,7 +261,7 @@ function pagemanager_admin()
 				{
 					$online_status=$lang->no;
 				}
-				$table->construct_cell($status_icon.'<strong><a href="'.$sub_tabs['pagemanager']['link'].'&amp;action=edit&amp;pid='.$pages['pid'].'">'.$pages['name'].'</a></strong><br /><small>'.$lang->pagemanager_open_page.'<a href="'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'" target="_blank">'.$mybb->settings['bburl'].'/misc.php?page='.$pages['url'].'</a></small>',$highlight);
+				$table->construct_cell($status_icon.'<strong><a href="'.$sub_tabs['pagemanager']['link'].'&amp;action=edit&amp;pid='.$pages['pid'].'" title="'.$lang->pagemanager_main_edit.$pages['name'].'">'.$pages['name'].'</a></strong>'.$pagelink, $highlight);
 				$table->construct_cell($pages['pid'],$highlight);
 				$table->construct_cell($framework_status,$highlight);
 				$table->construct_cell($online_status,$highlight);
@@ -342,7 +377,8 @@ function pagemanager_admin()
 			}
 			if(!$errors&&!$mybb->input['manual'])
 			{
-				$updated_page=array(
+				$updated_page = array
+				(
 					'name'=>$db->escape_string($form_array['name']),
 					'url'=>$db->escape_string($form_array['url']),
 					'framework'=>$form_array['framework'],
@@ -512,7 +548,8 @@ var editor = CodeMirror.fromTextArea(document.getElementById("template"), {
 					$modified=TIME_NOW;
 					$update_lang=$lang->pagemanager_edit_success;
 				}
-				$updated_page=array(
+				$updated_page = array
+				(
 					'name'=>$db->escape_string($form_array['name']),
 					'url'=>$db->escape_string($form_array['url']),
 					'framework'=>$form_array['framework'],
@@ -540,7 +577,7 @@ var editor = CodeMirror.fromTextArea(document.getElementById("template"), {
 		}
 		$queryadmin=$db->simple_select('adminoptions','*','uid='.$mybb->user['uid']);
 		$admin_options=$db->fetch_array($queryadmin);
-		$sub_tabs['pagemanager_edit']=array
+		$sub_tabs['pagemanager_edit'] = array
 		(
 			'title'=>$lang->pagemanager_edit_title,
 			'link'=>'index.php?module=config-pagemanager&amp;action=edit&amp;pid='.$pages['pid'],
@@ -667,12 +704,12 @@ var editor = CodeMirror.fromTextArea(document.getElementById("template"), {
 				if($mybb->input['action']=='enable')
 				{
 					$status_lang=$lang->pagemanager_enable_success;
-					$status_action=array('enabled'=>1);
+					$status_action = array('enabled'=>1);
 				}
 				else
 				{
 					$status_lang=$lang->pagemanager_disable_success;
-					$status_action=array('enabled'=>0);
+					$status_action = array('enabled'=>0);
 				}
 				$db->update_query('pages',$status_action,'pid='.$pages['pid']);
 				pagemanager_cache();
@@ -711,7 +748,7 @@ function pagemanager()
 {
 	global $mybb,$cache;
 	$pagecache=$cache->read('pages');
-	if($mybb->input['page']&&isset($pagecache[$mybb->input['page']]))
+	if($mybb->input['page'] && isset($pagecache[$mybb->input['page']]))
 	{
 		global $db;
 		$query=$db->simple_select('pages','*','pid='.$pagecache[$mybb->input['page']]['pid']);
@@ -739,7 +776,7 @@ function pagemanager()
 		{
 			eval('?>'.$pages['template'].'<?');
 		}
-		exit();
+		exit();		
 	}
 }
 
@@ -779,11 +816,11 @@ function pagemanager_cache($clear=false)
 	else
 	{
 		global $db;
-		$pages=array();
+		$pages = array();
 		$query=$db->simple_select('pages','pid,name,url,online','enabled=1');
 		while($page=$db->fetch_array($query))
 		{
-			$pages[$page['url']]=$page;
+			$pages[$page['url']] = $page;
 		}
 		$cache->update('pages',$pages);
 	}
@@ -820,7 +857,7 @@ function pagemanager_setinput($input=false,$import=false)
 			{
 				if($input['checksum'])
 				{
-					if(my_strtolower(md5(base64_decode($input['template'])))==my_strtolower($input['checksum']))
+					if(my_strtolower(md5(base64_decode($input['template']))) == my_strtolower($input['checksum']))
 					{
 						$default['template']=trim(base64_decode($input['template']));
 					}
@@ -846,5 +883,3 @@ function pagemanager_setinput($input=false,$import=false)
 	}
 	return $default;
 }
-
-?>
