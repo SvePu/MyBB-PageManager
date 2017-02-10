@@ -6,4 +6,5 @@
 	Last change: 2017-02-085
 */
 
+$l['pagemanager_page_disabled_redirect']='Sorry, this page is temporary disabled. - You will be redirected to Index page.';
 $l['pagemanager_online']='Viewing <a href="misc.php?page={1}">{2}</a>';

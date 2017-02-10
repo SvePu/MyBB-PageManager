@@ -778,6 +778,12 @@ function pagemanager()
 		}
 		exit();		
 	}
+	else
+	{
+		global  $db, $lang;
+		$lang->load("pagemanager");
+		redirect("index.php", $lang->pagemanager_page_disabled_redirect, '', true);
+	}
 }
 
 function pagemanager_online(&$plugin_array)
