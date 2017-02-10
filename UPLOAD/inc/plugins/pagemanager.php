@@ -58,13 +58,13 @@ function pagemanager_info()
 	
 	$info = array
 	(
-		'name'			=>	$lang->pagemanager_info_name,
+		'name'		=>	$lang->pagemanager_info_name,
 		'description'	=>	$lang->pagemanager_info_description,
-		'website'		=>	'',
-		'author'		=>	'Sebastian "querschlaeger" Wunderlich',
+		'website'	=>	'',
+		'author'	=>	'Sebastian "querschlaeger" Wunderlich',
 		'authorsite'	=>	'',
-		'version'		=>	'2.0.0',
-		'codename'		=>	'mybbpagemanager',
+		'version'	=>	'2.0.0',
+		'codename'	=>	'mybbpagemanager',
 		'compatibility'	=>	'18*'
 	);
 	
