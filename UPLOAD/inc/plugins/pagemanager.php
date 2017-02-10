@@ -748,6 +748,14 @@ function pagemanager()
 {
 	global $mybb,$cache;
 	$pagecache=$cache->read('pages');
+	if($mybb->input['page'] && !isset($pagecache[$mybb->input['page']]))
+	{
+		global  $db, $lang;
+		$lang->load("pagemanager");
+		redirect("index.php", $lang->pagemanager_page_disabled_redirect, '', true);
+		exit();
+	}
+	
 	if($mybb->input['page'] && isset($pagecache[$mybb->input['page']]))
 	{
 		global $db;
@@ -774,15 +782,9 @@ function pagemanager()
 		}
 		else
 		{
-			eval('?>'.$pages['template'].'<?');
+			eval('?>'.$pages['template']);
 		}
 		exit();		
-	}
-	else
-	{
-		global  $db, $lang;
-		$lang->load("pagemanager");
-		redirect("index.php", $lang->pagemanager_page_disabled_redirect, '', true);
 	}
 }
 
