@@ -5,6 +5,7 @@
 * Download and unzip plugin package
 * Copy content from "UPLOAD" folder to the forum root on server
 * Install&Activate the plugn in ACP
+* DONE!
 
 *Check the PageManager option in ACP configuration after installation*
 
