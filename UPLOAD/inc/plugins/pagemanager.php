@@ -60,7 +60,7 @@ function pagemanager_info()
 	(
 		'name'		=>	$lang->pagemanager_info_name,
 		'description'	=>	$lang->pagemanager_info_description,
-		'website'	=>	'',
+		'website'	=>	'https://community.mybb.com/thread-208230.html',
 		'author'	=>	'Sebastian "querschlaeger" Wunderlich',
 		'authorsite'	=>	'',
 		'version'	=>	'2.0.0',
