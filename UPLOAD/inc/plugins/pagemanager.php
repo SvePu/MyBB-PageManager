@@ -225,11 +225,11 @@ function pagemanager_admin()
 			{
 				if($mybb->input['highlight']==$pages['pid'])
 				{
-					$highlight = array('style'=>'background-color:#fffbd9');
+					$highlight = array('style'=>'font-size: inherit; background:#fffbd9');
 				}
 				else
 				{
-					$highlight='';
+					$highlight = array('style'=>'font-size: inherit;');
 				}
 				if($pages['enabled'])
 				{
