@@ -186,20 +186,20 @@ function pagemanager_admin()
 	$info = pagemanager_info();
 	$sub_tabs['pagemanager'] = array
 	(
-		'title'			=>	$lang->pagemanager_main_title,
-		'link'			=>	'index.php?module=config-pagemanager',
+		'title'		=>	$lang->pagemanager_main_title,
+		'link'		=>	'index.php?module=config-pagemanager',
 		'description'	=>	$lang->pagemanager_main_description
 		);
 	$sub_tabs['pagemanager_add'] = array
 	(
-		'title'			=>	$lang->pagemanager_add_title,
-		'link'			=>	'index.php?module=config-pagemanager&amp;action=add',
+		'title'		=>	$lang->pagemanager_add_title,
+		'link'		=>	'index.php?module=config-pagemanager&amp;action=add',
 		'description'	=>	$lang->pagemanager_add_description
 		);
 	$sub_tabs['pagemanager_import'] = array
 	(
-		'title'			=>	$lang->pagemanager_import_title,
-		'link'			=>	'index.php?module=config-pagemanager&amp;action=import',
+		'title'		=>	$lang->pagemanager_import_title,
+		'link'		=>	'index.php?module=config-pagemanager&amp;action=import',
 		'description'	=>	$lang->pagemanager_import_description
 		);
 	if(!$mybb->input['action'])
@@ -579,8 +579,8 @@ function pagemanager_admin()
 		$admin_options = $db->fetch_array($queryadmin);
 		$sub_tabs['pagemanager_edit'] = array
 		(
-			'title'			=>	$lang->pagemanager_edit_title,
-			'link'			=>	'index.php?module=config-pagemanager&amp;action=edit&amp;pid='.$pages['pid'],
+			'title'		=>	$lang->pagemanager_edit_title,
+			'link'		=>	'index.php?module=config-pagemanager&amp;action=edit&amp;pid='.$pages['pid'],
 			'description'	=>	$lang->pagemanager_edit_description
 			);
 		if($admin_options['codepress'] != 0)
