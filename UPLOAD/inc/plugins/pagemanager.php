@@ -49,7 +49,7 @@ else
 
 function pagemanager_info()
 {
-	global $lang;
+	global $db, $lang;
 	$lang->load("config_pagemanager");
 	
 	$editedby = '*Edited for MyBB 1.8 &amp; maintained by: <a href="https://community.mybb.com/user-91011.html" target="_blank">SvePu</a>';
@@ -58,8 +58,8 @@ function pagemanager_info()
 	
 	$info = array
 	(
-		'name'		=>	$lang->pagemanager_info_name,
-		'description'	=>	$lang->pagemanager_info_description,
+		'name'		=>	$db->escape_string($lang->pagemanager_info_name),
+		'description'	=>	$db->escape_string($lang->pagemanager_info_description),
 		'website'	=>	'https://community.mybb.com/thread-208230.html',
 		'author'	=>	'Sebastian "querschlaeger" Wunderlich',
 		'authorsite'	=>	'',
@@ -87,11 +87,10 @@ function pagemanager_deactivate()
 
 function pagemanager_install()
 {
-	global $db;
-	pagemanager_uninstall();
-	if($db->engine == 'mysql'||$db->engine == 'mysqli')
+	global $db;	
+	if($db->engine == 'mysql' || $db->engine == 'mysqli')
 	{
-		$db->query("CREATE TABLE `".TABLE_PREFIX."pages` (
+		$db->query("CREATE TABLE IF NOT EXISTS `".TABLE_PREFIX."pages` (
 			`pid` int(10) unsigned NOT NULL auto_increment,
 			`name` varchar(120) NOT NULL default '',
 			`url` varchar(30) NOT NULL default '',
@@ -108,10 +107,11 @@ function pagemanager_install()
 
 function pagemanager_is_installed()
 {
-	global $db;
-	if($db->table_exists('pages'))
+	global $mybb, $db;
+	$pmcache = $db->simple_select('datacache', '*', 'title="pages"');	
+	if($db->num_rows($pmcache) > 0 && $db->table_exists('pages'))
 	{
-		$fields=$db->show_fields_from('pages');
+		$fields = $db->show_fields_from('pages');
 		$list = array();
 		$check = array
 		(
@@ -139,8 +139,18 @@ function pagemanager_is_installed()
 
 function pagemanager_uninstall()
 {
-	global $db;
-	$db->drop_table('pages');
+	global $mybb, $db;
+	if($mybb->request_method != 'post')
+	{
+		global $page, $lang;
+		$lang->load('config_pagemanager');
+		$page->output_confirm_action('index.php?module=config-plugins&action=deactivate&uninstall=1&plugin=pagemanager', $lang->pagemanager_uninstall_message, $lang->pagemanager_uninstall);
+	}
+	
+	if(!isset($mybb->input['no']) && $db->table_exists('pages'))
+	{
+		$db->drop_table('pages');
+	}
 }
 
 function pagemanager_admin_action($action)
@@ -177,7 +187,7 @@ function pagemanager_admin_permissions($admin_permissions)
 
 function pagemanager_admin()
 {
-	global $mybb,$page,$db,$lang;
+	global $mybb, $page, $db, $lang;
 	$lang->load("config_pagemanager");
 	if($page->active_action != 'pagemanager')
 	{
@@ -746,7 +756,7 @@ function pagemanager_admin()
 
 function pagemanager()
 {
-	global $mybb,$cache;
+	global $mybb, $cache;
 	$pagecache = $cache->read('pages');
 	if($mybb->input['page'] && !isset($pagecache[$mybb->input['page']]))
 	{
@@ -819,7 +829,9 @@ function pagemanager_cache($clear=false)
 	global $cache;
 	if($clear==true)
 	{
-		$cache->update('pages',false);
+		global $db;
+		//$cache->update('pages', false);
+		$db->delete_query('datacache', 'title="pages"');
 	}
 	else
 	{

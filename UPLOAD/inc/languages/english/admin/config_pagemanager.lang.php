@@ -3,11 +3,13 @@
 	Language admin file for MyBB-PageManager plugin for MyBB 1.8
 	Language: english
 	Copyright © 2017 Svepu
-	Last change: 2017-02-10 
+	Last change: 2017-02-17
 */
 
 $l['pagemanager_info_name']='Page Manager';
 $l['pagemanager_info_description']='Allows you to manage additional pages.';
+$l['pagemanager_uninstall'] = 'Page Manager - Uninstallation';
+$l['pagemanager_uninstall_message'] = 'Do you wish to drop all plugin entries from the database?';
 $l['pagemanager_main_title']='Manage Pages';
 $l['pagemanager_main_description']='This section allows you to edit and delete additional pages.';
 $l['pagemanager_main_table']='Additional Pages';
