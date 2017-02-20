@@ -1,3 +1,5 @@
+[![Minimum PHP Version](https://img.shields.io/badge/php-%20>%3D5.4%20-blue.svg?style=flat-square)](https://php.net/)
+
 # MyBB-PageManager
 **A fully to MyBB 1.8 adapted version of Sebastian Wunderlichs plugin "PageManager" with some new features.**
 
