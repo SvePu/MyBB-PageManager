@@ -63,7 +63,7 @@ function pagemanager_info()
 		'website'	=>	'https://community.mybb.com/thread-208230.html',
 		'author'	=>	'Sebastian "querschlaeger" Wunderlich',
 		'authorsite'	=>	'',
-		'version'	=>	'2.0.1',
+		'version'	=>	'2.1.0',
 		'codename'	=>	'mybbpagemanager',
 		'compatibility'	=>	'18*'
 		);
@@ -75,6 +75,7 @@ function pagemanager_info()
 
 function pagemanager_activate()
 {
+	pagemanager_plugin_update();
 	change_admin_permission('tools','pagemanager');
 	pagemanager_cache();
 }
@@ -82,18 +83,19 @@ function pagemanager_activate()
 function pagemanager_deactivate()
 {
 	change_admin_permission('tools','pagemanager',-1);
-	pagemanager_cache(true);
+	pagemanager_cache(true, false);
 }
 
 function pagemanager_install()
 {
-	global $db;	
+	global $db;
 	if($db->engine == 'mysql' || $db->engine == 'mysqli')
 	{
 		$db->query("CREATE TABLE IF NOT EXISTS `".TABLE_PREFIX."pages` (
 			`pid` int(10) unsigned NOT NULL auto_increment,
 			`name` varchar(120) NOT NULL default '',
 			`url` varchar(30) NOT NULL default '',
+			`groups` text NOT NULL,
 			`framework` int(1) NOT NULL default '0',
 			`template` text NOT NULL,
 			`online` int(1) NOT NULL default '1',
@@ -101,7 +103,8 @@ function pagemanager_install()
 			`dateline` bigint(30) NOT NULL default '0',
 			PRIMARY KEY (`pid`),
 			UNIQUE KEY `url` (`url`)
-			) ENGINE=MyISAM".$db->build_create_table_collation());
+			) ENGINE=MyISAM".$db->build_create_table_collation()
+		);
 	}
 }
 
@@ -118,6 +121,7 @@ function pagemanager_is_installed()
 			'pid',
 			'name',
 			'url',
+			'groups',
 			'framework',
 			'template',
 			'online',
@@ -151,6 +155,16 @@ function pagemanager_uninstall()
 	{
 		$db->drop_table('pages');
 	}
+	pagemanager_cache(true, true);
+}
+
+function pagemanager_plugin_update()
+{
+	global $db;
+	if($db->table_exists('pages') && !$db->field_exists('groups', 'pages'))
+	{
+		$db->query("ALTER TABLE ".TABLE_PREFIX."pages ADD `groups` text NOT NULL");
+	}	
 }
 
 function pagemanager_admin_action($action)
@@ -221,25 +235,34 @@ function pagemanager_admin()
 			$page->output_error('<p><em>'.$lang->pagemanager_install_error.'</em></p>');
 		}
 		$page->output_nav_tabs($sub_tabs,'pagemanager');
-		$table=new Table;
+		$table = new Table;
 		$table->construct_header($lang->name);
-		$table->construct_header($lang->pagemanager_main_table_id);
-		$table->construct_header($lang->pagemanager_main_table_framework);
-		$table->construct_header($lang->pagemanager_main_table_online);
-		$table->construct_header($lang->pagemanager_main_table_modified);
-		$table->construct_header($lang->controls);
-		$query=$db->simple_select('pages','*','', array('order_by'=>'name', 'order_dir'=>'ASC'));
+		$table->construct_header($lang->pagemanager_main_table_id, array('width' => 40, 'class' => 'align_center'));
+		$table->construct_header($lang->pagemanager_main_table_framework, array('width' => 125, 'class' => 'align_center'));
+		$table->construct_header($lang->pagemanager_main_table_online, array('width' => 100, 'class' => 'align_center'));
+		$table->construct_header($lang->pagemanager_main_table_groups, array('width' => 125, 'class' => 'align_center'));
+		$table->construct_header($lang->pagemanager_main_table_modified, array('width' => 150, 'class' => 'align_center'));
+		$table->construct_header($lang->controls, array('width' => 100, 'class' => 'align_center'));
+		$query = $db->simple_select('pages','*','', array('order_by'=>'name', 'order_dir'=>'ASC'));
 		if($db->num_rows($query)>0)
 		{
 			while($pages = $db->fetch_array($query))
 			{
 				if($mybb->input['highlight'] == $pages['pid'])
 				{
-					$highlight = array('style'=>'font-size: inherit; background:#fffbd9');
+					$highlight = array('style' => 'text-align:left; background-color: #FFFBD9;');
+					$highlightc40 = array('width' => 40, 'style' => 'background-color: #FFFBD9;', 'class' => 'align_center');
+					$highlightc100 = array('width' => 100, 'style' => 'background-color: #FFFBD9;', 'class' => 'align_center');
+					$highlightc125 = array('width' => 125, 'style' => 'background-color: #FFFBD9;', 'class' => 'align_center');
+					$highlightc150 = array('width' => 150, 'style' => 'background-color: #FFFBD9;', 'class' => 'align_center');
 				}
 				else
 				{
-					$highlight = array('style'=>'font-size: inherit;');
+					$highlight = array('style' => 'text-align:left;');
+					$highlightc40 = array('width' => 40, 'class' => 'align_center');
+					$highlightc100 = array('width' => 100, 'class' => 'align_center');
+					$highlightc125 = array('width' => 125, 'class' => 'align_center');
+					$highlightc150 = array('width' => 150, 'class' => 'align_center');
 				}
 				if($pages['enabled'])
 				{
@@ -271,23 +294,38 @@ function pagemanager_admin()
 				{
 					$online_status = $lang->no;
 				}
+				if($pages['groups'] == "-1")
+				{
+					$groups_allowed = $lang->all_groups;
+				}
+				else
+				{
+					$groups_allowed = $comma = '';
+					$groups = $db->simple_select("usergroups", "gid, title", "gid IN ({$pages['groups']})");
+					while($gt = $db->fetch_array($groups))
+					{
+						$groups_allowed .= $comma.'<span style="cursor:pointer;" title="'.$gt['title'].'">'.$gt['gid'].'</span>';
+						$comma = ', ';
+					}
+				}
 				$table->construct_cell($status_icon.'<strong><a href="'.$sub_tabs['pagemanager']['link'].'&amp;action=edit&amp;pid='.$pages['pid'].'" title="'.$lang->pagemanager_main_edit.$pages['name'].'">'.$pages['name'].'</a></strong>'.$pagelink, $highlight);
-				$table->construct_cell($pages['pid'],$highlight);
-				$table->construct_cell($framework_status,$highlight);
-				$table->construct_cell($online_status,$highlight);
-				$table->construct_cell($lang->sprintf($lang->pagemanager_main_table_dateline,my_date($mybb->settings['dateformat'],$pages['dateline']),my_date($mybb->settings['timeformat'],$pages['dateline'])),$highlight);
-				$popup=new PopupMenu('page_'.$pages['pid'],$lang->options);
+				$table->construct_cell($pages['pid'],$highlightc40);
+				$table->construct_cell($framework_status,$highlightc125);
+				$table->construct_cell($online_status,$highlightc100);
+				$table->construct_cell($groups_allowed,$highlightc125);
+				$table->construct_cell($lang->sprintf($lang->pagemanager_main_table_dateline,my_date($mybb->settings['dateformat'],$pages['dateline']),my_date($mybb->settings['timeformat'],$pages['dateline'])),$highlightc150);
+				$popup = new PopupMenu('page_'.$pages['pid'],$lang->options);
 				$popup->add_item($lang->pagemanager_main_control_edit,$sub_tabs['pagemanager']['link'].'&amp;action=edit&amp;pid='.$pages['pid']);
 				$popup->add_item($lang->pagemanager_main_control_export,$sub_tabs['pagemanager']['link'].'&amp;action=export&amp;pid='.$pages['pid']);
 				$popup->add_item($status_lang,$sub_tabs['pagemanager']['link'].'&amp;action='.$status_action.'&amp;pid='.$pages['pid'].'&amp;my_post_key='.$mybb->post_code);
 				$popup->add_item($lang->pagemanager_main_control_delete,$sub_tabs['pagemanager']['link'].'&amp;action=delete&amp;pid='.$pages['pid'].'&amp;my_post_key='.$mybb->post_code,'return AdminCP.deleteConfirmation(this,\''.$lang->pagemanager_main_control_delete_question.'\')');
-				$table->construct_cell($popup->fetch(),$highlight);
+				$table->construct_cell($popup->fetch(),$highlightc100);
 				$table->construct_row();
 			}
 		}
 		else
 		{
-			$table->construct_cell($lang->pagemanager_main_table_no_pages,array('colspan'=>6));
+			$table->construct_cell($lang->pagemanager_main_table_no_pages, array('colspan'=>7));
 			$table->construct_row();
 		}
 		$table->output($lang->pagemanager_main_table);
@@ -299,7 +337,7 @@ function pagemanager_admin()
 		{
 			if($mybb->input['import'])
 			{
-				if(!$_FILES['file']||$_FILES['file']['error'] == 4)
+				if(!$_FILES['file'] || $_FILES['file']['error'] == 4)
 				{
 					$error = $lang->pagemanager_import_error_no_file;
 				}
@@ -350,7 +388,7 @@ function pagemanager_admin()
 						{
 							$input_array['name'] = $mybb->input['name_overwrite'];
 						}
-						$form_array=pagemanager_setinput($input_array,true);
+						$form_array = pagemanager_setinput($input_array,true);
 						if(!$form_array['name'] || !$form_array['url'] || !$form_array['template'])
 						{
 							$error = $lang->pagemanager_import_error_no_contents;
@@ -385,18 +423,50 @@ function pagemanager_admin()
 			{
 				$errors[] = $lang->pagemanager_edit_error_template;
 			}
+			if($mybb->input['group_type'] == 2)
+			{
+				if(count($mybb->input['group_1_groups']) < 1)
+				{
+					$errors[] = $lang->pagemanager_edit_no_groups_selected;
+				}
+
+				$group_checked[2] = "checked=\"checked\"";
+			}
+			else
+			{
+				$group_checked[1] = "checked=\"checked\"";
+			}
 			if(!$errors && !$mybb->input['manual'])
 			{
+				if($mybb->input['group_type'] == 2)
+				{
+					if(is_array($mybb->input['group_1_groups']))
+					{
+						$checked = array();
+						foreach($mybb->input['group_1_groups'] as $gid)
+						{
+							$checked[] = (int)$gid;
+						}
+
+						$selected_groups = implode(',', $checked);
+					}
+				}
+				else
+				{
+					$selected_groups = '-1';
+				}				
+				
 				$updated_page = array
 				(
 					'name'		=>	$db->escape_string($form_array['name']),
 					'url'		=>	$db->escape_string($form_array['url']),
+					'groups'	=>	$selected_groups,
 					'framework'	=>	$form_array['framework'],
 					'template'	=>	$db->escape_string($form_array['template']),
 					'online'	=>	$form_array['online'],
 					'enabled'	=>	$form_array['enabled'],
 					'dateline'	=>	TIME_NOW
-					);
+				);
 				$db->insert_query('pages',$updated_page);
 				$query = $db->simple_select('pages','*','url="'.$db->escape_string($form_array['url']).'"');
 				$pages = $db->fetch_array($query);
@@ -415,6 +485,9 @@ function pagemanager_admin()
 		else
 		{
 			$form_array = pagemanager_setinput();
+			$mybb->input['group_1_groups'] = '';
+			$group_checked[1] = "checked=\"checked\"";
+			$group_checked[2] = '';
 		}
 		$queryadmin = $db->simple_select('adminoptions','*','uid='.$mybb->user['uid']);
 		$admin_options = $db->fetch_array($queryadmin);
@@ -452,10 +525,48 @@ function pagemanager_admin()
 			$page->output_inline_error($errors);
 		}
 		$form_container = new FormContainer($lang->pagemanager_add_form);
-		$form_container->output_row($lang->pagemanager_edit_form_name.' <em>*</em>',$lang->pagemanager_edit_form_name_description,$form->generate_text_box('name',$form_array['name'],array('id'=>'name')),'name');
-		$form_container->output_row($lang->pagemanager_edit_form_url.' <em>*</em>',$lang->pagemanager_edit_form_url_description,$form->generate_text_box('url',$form_array['url'],array('id'=>'url')),'url');
+		$form_container->output_row($lang->pagemanager_edit_form_name.' <em>*</em>',$lang->pagemanager_edit_form_name_description,$form->generate_text_box('name',$form_array['name'],array('id'=>'name')), 'name');
+		$form_container->output_row($lang->pagemanager_edit_form_url.' <em>*</em>',$lang->pagemanager_edit_form_url_description,$form->generate_text_box('url',$form_array['url'],array('id'=>'url')), 'url');
+		$group_select = "<script type=\"text/javascript\">
+			function checkAction(id)
+			{
+				var checked = '';
+
+				$('.'+id+'s_check').each(function(e, val)
+				{
+					if($(this).prop('checked') == true)
+					{
+						checked = $(this).val();
+					}
+				});
+				$('.'+id+'s').each(function(e)
+				{
+					$(this).hide();
+				});
+				if($('#'+id+'_'+checked))
+				{
+					$('#'+id+'_'+checked).show();
+				}
+			}
+		</script>
+		<dl style=\"margin-top: 0; margin-bottom: 0; width: 100%\">
+		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"group_type\" value=\"1\" {$group_checked[1]} class=\"groups_check\" onclick=\"checkAction('group');\" style=\"vertical-align: middle;\" /> <strong>{$lang->all_groups}</strong></label></dt>
+			<dt><label style=\"display: block;\"><input type=\"radio\" name=\"group_type\" value=\"2\" {$group_checked[2]} class=\"groups_check\" onclick=\"checkAction('group');\" style=\"vertical-align: middle;\" /> <strong>{$lang->select_groups}</strong></label></dt>
+			<dd style=\"margin-top: 4px;\" id=\"group_2\" class=\"groups\">
+				<table cellpadding=\"4\">
+					<tr>
+						<td valign=\"top\"><small>{$lang->groups_colon}</small></td>
+						<td>".$form->generate_group_select('group_1_groups[]', $mybb->input['group_1_groups'], array('multiple' => true, 'size' => 5))."</td>
+					</tr>
+				</table>
+			</dd>
+		</dl>
+		<script type=\"text/javascript\">
+			checkAction('group');
+		</script>";
+		$form_container->output_row($lang->pagemanager_add_edit_groupselect." <em>*</em>", '', $group_select);		
 		$form_container->output_row($lang->pagemanager_edit_form_framework,$lang->pagemanager_edit_form_framework_description,$form->generate_yes_no_radio('framework',$form_array['framework']));
-		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','style'=>'width:100%;height:500px;')));
+		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','style'=>'width:100%;height:500px;')), 'template');
 		$form_container->output_row($lang->pagemanager_edit_form_online,$lang->pagemanager_edit_form_online_description,$form->generate_yes_no_radio('online',$form_array['online']));
 		$form_container->output_row($lang->pagemanager_edit_form_enable,$lang->pagemanager_edit_form_enable_description,$form->generate_yes_no_radio('enabled',$form_array['enabled']));
 		$form_container->end();
@@ -532,9 +643,38 @@ function pagemanager_admin()
 			{
 				$errors[] = $lang->pagemanager_edit_error_template;
 			}
+			if($mybb->input['group_type'] == 2)
+			{
+				if(count($mybb->input['group_1_groups']) < 1)
+				{
+					$errors[] = $lang->pagemanager_edit_no_groups_selected;
+				}
+				$group_checked[2] = "checked=\"checked\"";
+			}
+			else
+			{
+				$group_checked[1] = "checked=\"checked\"";
+			}
 			if(!$errors)
 			{
-				if($form_array['name'] == $pages['name'] && $form_array['url'] == $pages['url'] && $form_array['framework'] == $pages['framework'] && $form_array['template'] == $pages['template'] && $form_array['online'] == $pages['online'])
+				if($mybb->input['group_type'] == 2)
+				{
+					if(is_array($mybb->input['group_1_groups']))
+					{
+						$checked = array();
+						foreach($mybb->input['group_1_groups'] as $gid)
+						{
+							$checked[] = (int)$gid;
+						}
+
+						$selected_groups = implode(',', $checked);
+					}
+				}
+				else
+				{
+					$selected_groups = '-1';
+				}				
+				if($form_array['name'] == $pages['name'] && $form_array['url'] == $pages['url'] && 	$form_array['framework'] == $pages['framework'] && $form_array['template'] == $pages['template'] && $form_array['online'] == $pages['online'] && $pages['groups'] == $selected_groups)
 				{
 					$modified = $pages['dateline'];
 					if($form_array['enabled'] == $pages['enabled'])
@@ -562,12 +702,13 @@ function pagemanager_admin()
 				(
 					'name'		=>	$db->escape_string($form_array['name']),
 					'url'		=>	$db->escape_string($form_array['url']),
+					'groups'	=>	$selected_groups,
 					'framework'	=>	$form_array['framework'],
 					'template'	=>	$db->escape_string($form_array['template']),
 					'online'	=>	$form_array['online'],
 					'enabled'	=>	$form_array['enabled'],
 					'dateline'	=>	$modified
-					);
+				);
 				$db->update_query('pages',$updated_page,'pid='.$pages['pid']);
 				pagemanager_cache();
 				flash_message($update_lang,'success');
@@ -584,6 +725,18 @@ function pagemanager_admin()
 		else
 		{
 			$form_array = pagemanager_setinput($pages);
+			$mybb->input['group_1_groups'] = explode(",", $pages['groups']);
+
+			if(!$pages['groups'] || $pages['groups'] == -1)
+			{
+				$group_checked[1] = "checked=\"checked\"";
+				$group_checked[2] = '';
+			}
+			else
+			{
+				$group_checked[1] = '';
+				$group_checked[2] = "checked=\"checked\"";
+			}
 		}
 		$queryadmin = $db->simple_select('adminoptions','*','uid='.$mybb->user['uid']);
 		$admin_options = $db->fetch_array($queryadmin);
@@ -592,7 +745,7 @@ function pagemanager_admin()
 			'title'		=>	$lang->pagemanager_edit_title,
 			'link'		=>	'index.php?module=config-pagemanager&amp;action=edit&amp;pid='.$pages['pid'],
 			'description'	=>	$lang->pagemanager_edit_description
-			);
+		);
 		if($admin_options['codepress'] != 0)
 		{
 			$page->extra_header = '<link href="./jscripts/codemirror/lib/codemirror.css" rel="stylesheet">
@@ -627,10 +780,48 @@ function pagemanager_admin()
 			$page->output_inline_error($errors);
 		}
 		$form_container = new FormContainer($lang->pagemanager_edit_form);
-		$form_container->output_row($lang->pagemanager_edit_form_name.' <em>*</em>',$lang->pagemanager_edit_form_name_description,$form->generate_text_box('name',$form_array['name'],array('id'=>'name')),'name');
-		$form_container->output_row($lang->pagemanager_edit_form_url.' <em>*</em>',$lang->pagemanager_edit_form_url_description,$form->generate_text_box('url',$form_array['url'],array('id'=>'url')),'url');
+		$form_container->output_row($lang->pagemanager_edit_form_name.' <em>*</em>',$lang->pagemanager_edit_form_name_description,$form->generate_text_box('name',$form_array['name'],array('id'=>'name')), 'name');
+		$form_container->output_row($lang->pagemanager_edit_form_url.' <em>*</em>',$lang->pagemanager_edit_form_url_description,$form->generate_text_box('url',$form_array['url'],array('id'=>'url')), 'url');
+		$group_select = "<script type=\"text/javascript\">
+			function checkAction(id)
+			{
+				var checked = '';
+
+				$('.'+id+'s_check').each(function(e, val)
+				{
+					if($(this).prop('checked') == true)
+					{
+						checked = $(this).val();
+					}
+				});
+				$('.'+id+'s').each(function(e)
+				{
+					$(this).hide();
+				});
+				if($('#'+id+'_'+checked))
+				{
+					$('#'+id+'_'+checked).show();
+				}
+			}
+		</script>
+		<dl style=\"margin-top: 0; margin-bottom: 0; width: 100%\">
+		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"group_type\" value=\"1\" {$group_checked[1]} class=\"groups_check\" onclick=\"checkAction('group');\" style=\"vertical-align: middle;\" /> <strong>{$lang->all_groups}</strong></label></dt>
+			<dt><label style=\"display: block;\"><input type=\"radio\" name=\"group_type\" value=\"2\" {$group_checked[2]} class=\"groups_check\" onclick=\"checkAction('group');\" style=\"vertical-align: middle;\" /> <strong>{$lang->select_groups}</strong></label></dt>
+			<dd style=\"margin-top: 4px;\" id=\"group_2\" class=\"groups\">
+				<table cellpadding=\"4\">
+					<tr>
+						<td valign=\"top\"><small>{$lang->groups_colon}</small></td>
+						<td>".$form->generate_group_select('group_1_groups[]', $mybb->input['group_1_groups'], array('multiple' => true, 'size' => 5))."</td>
+					</tr>
+				</table>
+			</dd>
+		</dl>
+		<script type=\"text/javascript\">
+			checkAction('group');
+		</script>";
+		$form_container->output_row($lang->pagemanager_add_edit_groupselect." <em>*</em>", '', $group_select);
 		$form_container->output_row($lang->pagemanager_edit_form_framework,$lang->pagemanager_edit_form_framework_description,$form->generate_yes_no_radio('framework',$form_array['framework']));
-		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'],array('id'=>'template','style'=>'width:100%;height:500px;')));
+		$form_container->output_row($lang->pagemanager_edit_form_template.' <em>*</em>',$lang->pagemanager_edit_form_template_description,$form->generate_text_area('template',$form_array['template'], array('id' => 'template', 'style' => 'width: 100%; height: 500px;')), 'template');
 		$form_container->output_row($lang->pagemanager_edit_form_online,$lang->pagemanager_edit_form_online_description,$form->generate_yes_no_radio('online',$form_array['online']));
 		$form_container->output_row($lang->pagemanager_edit_form_enable,$lang->pagemanager_edit_form_enable_description,$form->generate_yes_no_radio('enabled',$form_array['enabled']));
 		$form_container->end();
@@ -653,8 +844,8 @@ function pagemanager_admin()
 				theme: "mybb"
 			});
 		</script>';
-	}
-	$page->output_footer();
+		}
+		$page->output_footer();
 	}
 	if($mybb->input['action'] == 'export')
 	{
@@ -769,32 +960,39 @@ function pagemanager()
 	if($mybb->input['page'] && isset($pagecache[$mybb->input['page']]))
 	{
 		global $db;
-		$query = $db->simple_select('pages','*','pid='.$pagecache[$mybb->input['page']]['pid']);
-		$pages = $db->fetch_array($query);
-		if($pages['framework'])
+		$query=$db->simple_select('pages','*','pid='.$pagecache[$mybb->input['page']]['pid']);
+		$pages=$db->fetch_array($query);
+		if($pages['groups'] == "-1" || is_member($pages['groups']))
 		{
-			global $headerinclude,$header,$theme,$footer;
-			$template='<html>
-			<head>
-				<title>'.$pages['name'].' - '.$mybb->settings['bbname'].'</title>
-				{$headerinclude}
-			</head>
-			<body>
-				{$header}
-				'.$pages['template'].'
-				{$footer}
-			</body>
-			</html>';
-			$template=str_replace("\\'","'",addslashes($template));
-			add_breadcrumb($pages['name']);
-			eval("\$page=\"".$template."\";");
-			output_page($page);
+			if($pages['framework'])
+			{
+				global $headerinclude,$header,$theme,$footer;
+				$template='<html>
+				<head>
+					<title>'.$pages['name'].' - '.$mybb->settings['bbname'].'</title>
+					{$headerinclude}
+				</head>
+				<body>
+					{$header}
+					'.$pages['template'].'
+					{$footer}
+				</body>
+				</html>';
+				$template=str_replace("\\'","'",addslashes($template));
+				add_breadcrumb($pages['name']);
+				eval("\$page=\"".$template."\";");
+				output_page($page);
+			}
+			else
+			{
+				eval('?>'.$pages['template']);
+			}
+			exit();
 		}
 		else
 		{
-			eval('?>'.$pages['template']);
+			error_no_permission();
 		}
-		exit();		
 	}
 }
 
@@ -809,10 +1007,10 @@ function pagemanager_online(&$plugin_array)
 		{
 			$location['query'] = html_entity_decode($location['query']);
 		}
-		$var=explode('&',$location['query']);
+		$var = explode('&',$location['query']);
 		foreach($var as $val)
 		{
-			$param=explode('=',$val);
+			$param = explode('=',$val);
 			$list[$param[0]] = $param[1];
 		}
 		if(isset($pagecache[$list['page']]))
@@ -824,20 +1022,24 @@ function pagemanager_online(&$plugin_array)
 	}
 }
 
-function pagemanager_cache($clear=false)
+function pagemanager_cache($clear=false, $deinst=false)
 {
 	global $cache;
-	if($clear==true)
+	if($clear == true)
 	{
-		global $db;
-		//$cache->update('pages', false);
-		$db->delete_query('datacache', 'title="pages"');
+		$cache->update('pages', false);
+		
+		if($deinst == true)
+		{
+			global $db;
+			$db->delete_query('datacache', 'title="pages"');
+		}
 	}
 	else
 	{
 		global $db;
 		$pages = array();
-		$query = $db->simple_select('pages','pid,name,url,online','enabled=1');
+		$query = $db->simple_select('pages','pid,name,url,groups,online','enabled=1');
 		while($page = $db->fetch_array($query))
 		{
 			$pages[$page['url']] = $page;
@@ -846,18 +1048,19 @@ function pagemanager_cache($clear=false)
 	}
 }
 
-function pagemanager_setinput($input=false,$import=false)
+function pagemanager_setinput($input=false, $import=false)
 {
-	$default=array
+	$default = array
 	(
 		'name'		=>	'',
 		'url'		=>	'',
+		'groups'	=>	'-1',
 		'framework'	=>	0,
 		'template'	=>	'',
 		'online'	=>	1,
 		'enabled'	=>	1
-		);
-	if($input!=false)
+	);
+	if($input != false)
 	{
 		if($input['name'])
 		{
@@ -898,7 +1101,7 @@ function pagemanager_setinput($input=false,$import=false)
 		}
 		if($input['enabled'] == 0 || $import == true)
 		{
-			$default['enabled']=0;
+			$default['enabled'] = 0;
 		}
 	}
 	return $default;

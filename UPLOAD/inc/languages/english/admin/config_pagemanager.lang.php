@@ -3,13 +3,11 @@
 	Language admin file for MyBB-PageManager plugin for MyBB 1.8
 	Language: english
 	Copyright © 2017 Svepu
-	Last change: 2017-02-17
+	Last change: 2017-02-21 
 */
 
 $l['pagemanager_info_name']='Page Manager';
 $l['pagemanager_info_description']='Allows you to manage additional pages.';
-$l['pagemanager_uninstall'] = 'Page Manager - Uninstallation';
-$l['pagemanager_uninstall_message'] = 'Do you wish to drop all plugin entries from the database?';
 $l['pagemanager_main_title']='Manage Pages';
 $l['pagemanager_main_description']='This section allows you to edit and delete additional pages.';
 $l['pagemanager_main_table']='Additional Pages';
@@ -18,6 +16,7 @@ $l['pagemanager_main_table_disabled']='Disabled';
 $l['pagemanager_main_table_id']='ID';
 $l['pagemanager_main_table_framework']='MyBB Template?';
 $l['pagemanager_main_table_online']='Show online?';
+$l['pagemanager_main_table_groups']='Visible for Group ID';
 $l['pagemanager_main_table_modified']='Modified';
 $l['pagemanager_main_table_dateline']='{1}, {2}';
 $l['pagemanager_main_table_no_pages']='No additional pages exist at this time.';
@@ -34,6 +33,7 @@ $l['pagemanager_add_title']='Add New Page';
 $l['pagemanager_add_description']='Here you can create a new additional page.';
 $l['pagemanager_add_form']='Add New Page';
 $l['pagemanager_add_success']='The page has been created successfully.';
+$l['pagemanager_add_edit_groupselect']='Page visible for groups';
 $l['pagemanager_import_title']='Import Page';
 $l['pagemanager_import_description']='Here you can import new pages.';
 $l['pagemanager_import_form']='Import Page';
@@ -74,6 +74,7 @@ $l['pagemanager_edit_success_nothing']='The selected page has been updated succe
 $l['pagemanager_edit_error_name']='Name can not be empty';
 $l['pagemanager_edit_error_url']='URI parameter can not be empty';
 $l['pagemanager_edit_error_url_duplicate']='URI parameter is already taken';
+$l['pagemanager_edit_no_groups_selected']='Please select the groups to which this page will be visible.';
 $l['pagemanager_edit_error_template']='Page content can not be empty';
 $l['pagemanager_enable_success']='The selected page has been enabled successfully.';
 $l['pagemanager_disable_success']='The selected page has been disabled successfully.';
