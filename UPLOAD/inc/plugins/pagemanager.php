@@ -76,13 +76,13 @@ function pagemanager_info()
 function pagemanager_activate()
 {
 	pagemanager_plugin_update();
-	change_admin_permission('tools','pagemanager');
+	change_admin_permission('config','pagemanager');
 	pagemanager_cache();
 }
 
 function pagemanager_deactivate()
 {
-	change_admin_permission('tools','pagemanager',-1);
+	change_admin_permission('config','pagemanager',-1);
 	pagemanager_cache(true, false);
 }
 
@@ -163,7 +163,8 @@ function pagemanager_plugin_update()
 	global $db;
 	if($db->table_exists('pages') && !$db->field_exists('groups', 'pages'))
 	{
-		$db->query("ALTER TABLE ".TABLE_PREFIX."pages ADD `groups` text NOT NULL");
+		$db->add_column("pages", "groups", "text NOT NULL");
+		$db->update_query("pages", array('groups' => '-1'));
 	}	
 }
 
@@ -1031,8 +1032,7 @@ function pagemanager_cache($clear=false, $deinst=false)
 		
 		if($deinst == true)
 		{
-			global $db;
-			$db->delete_query('datacache', 'title="pages"');
+			$cache->delete('pages');
 		}
 	}
 	else
