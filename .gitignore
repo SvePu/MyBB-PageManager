@@ -1,8 +1,6 @@
 # git files
 .gitignore export-ignore
 # screenshot files
-Screenshots/*.png export-ignore
-Screenshots export-ignore
+Screenshots/* export-ignore
 # Example files
-ExamplePages/*.xml export-ignore
-ExamplePages export-ignore
+ExamplePages/* export-ignore
