@@ -3,5 +3,7 @@
 .gitattributes export-ignore
 # screenshot files
 Screenshots/* export-ignore
+Screenshots export-ignore
 # Example files
 ExamplePages/* export-ignore
+ExamplePages export-ignore
