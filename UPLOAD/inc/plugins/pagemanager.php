@@ -63,7 +63,7 @@ function pagemanager_info()
 		'website'	=>	'https://community.mybb.com/thread-208230.html',
 		'author'	=>	'Sebastian "querschlaeger" Wunderlich',
 		'authorsite'	=>	'',
-		'version'	=>	'2.1.0',
+		'version'	=>	'2.1.1',
 		'codename'	=>	'mybbpagemanager',
 		'compatibility'	=>	'18*'
 		);
