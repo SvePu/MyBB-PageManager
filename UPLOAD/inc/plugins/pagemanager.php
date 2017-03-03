@@ -40,6 +40,8 @@ if(defined('IN_ADMINCP'))
 	$plugins->add_hook('admin_config_menu','pagemanager_admin_menu');
 	$plugins->add_hook('admin_config_permissions','pagemanager_admin_permissions');
 	$plugins->add_hook('admin_load','pagemanager_admin');
+	$plugins->add_hook("admin_tools_cache_start", "pagemanager_tools_cache_rebuild");
+	$plugins->add_hook("admin_tools_cache_rebuild", "pagemanager_tools_cache_rebuild");
 }
 else
 {
@@ -509,8 +511,12 @@ function pagemanager_admin()
 			<script src="./jscripts/codemirror/addon/search/search.js?ver=1808"></script>
 			<script src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 			<script src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
+			<script src="./jscripts/codemirror/addon/edit/matchbrackets.js"></script>
+			<script src="./jscripts/codemirror/addon/edit/matchtags.js"></script>
+			<script src="./jscripts/codemirror/addon/edit/closetag.js"></script>
 			<script src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
-			<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">';
+			<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">
+			<style type="text/css">div.CodeMirror span.CodeMirror-matchingbracket {background: rgba(255, 150, 0, .3);border:1px dotted; border-radius: 2px;}</style>';
 		}
 		$page->add_breadcrumb_item($lang->pagemanager_info_name,$sub_tabs['pagemanager']['link']);
 		$page->add_breadcrumb_item($sub_tabs['pagemanager_add']['title']);
@@ -557,7 +563,7 @@ function pagemanager_admin()
 				<table cellpadding=\"4\">
 					<tr>
 						<td valign=\"top\"><small>{$lang->groups_colon}</small></td>
-						<td>".$form->generate_group_select('group_1_groups[]', $mybb->input['group_1_groups'], array('multiple' => true, 'size' => 5))."</td>
+						<td>".$form->generate_group_select('group_1_groups[]', $mybb->input['group_1_groups'], array('multiple' => true, 'size' => 10))."</td>
 					</tr>
 				</table>
 			</dd>
@@ -585,7 +591,10 @@ function pagemanager_admin()
 				viewportMargin: Infinity,
 				indentWithTabs: true,
 				indentUnit: 4,
-				mode: "php",
+				mode: "application/x-httpd-php",
+				matchBrackets: true,
+				matchTags: {bothTags: true},
+				autoCloseTags: true,
 				theme: "mybb"
 			});
 		</script>';
@@ -764,8 +773,12 @@ function pagemanager_admin()
 			<script src="./jscripts/codemirror/addon/search/search.js?ver=1808"></script>
 			<script src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 			<script src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
+			<script src="./jscripts/codemirror/addon/edit/matchbrackets.js"></script>
+			<script src="./jscripts/codemirror/addon/edit/matchtags.js"></script>
+			<script src="./jscripts/codemirror/addon/edit/closetag.js"></script>
 			<script src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
-			<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">';
+			<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">
+			<style type="text/css">div.CodeMirror span.CodeMirror-matchingbracket {background: rgba(255, 150, 0, .3);border:1px dotted; border-radius: 2px;}</style>';
 		}
 		$page->add_breadcrumb_item($lang->pagemanager_info_name,$sub_tabs['pagemanager']['link']);
 		$page->add_breadcrumb_item($sub_tabs['pagemanager_edit']['title']);
@@ -812,7 +825,7 @@ function pagemanager_admin()
 				<table cellpadding=\"4\">
 					<tr>
 						<td valign=\"top\"><small>{$lang->groups_colon}</small></td>
-						<td>".$form->generate_group_select('group_1_groups[]', $mybb->input['group_1_groups'], array('multiple' => true, 'size' => 5))."</td>
+						<td>".$form->generate_group_select('group_1_groups[]', $mybb->input['group_1_groups'], array('multiple' => true, 'size' => 10))."</td>
 					</tr>
 				</table>
 			</dd>
@@ -841,7 +854,10 @@ function pagemanager_admin()
 				viewportMargin: Infinity,
 				indentWithTabs: true,
 				indentUnit: 4,
-				mode: "php",
+				mode: "application/x-httpd-php",
+				matchBrackets: true,
+				matchTags: {bothTags: true},
+				autoCloseTags: true,
 				theme: "mybb"
 			});
 		</script>';
@@ -995,6 +1011,20 @@ function pagemanager()
 			error_no_permission();
 		}
 	}
+}
+
+function pagemanager_tools_cache_rebuild()
+{
+	global $cache;
+	class MyPagemanagerCache extends datacache
+	{
+		function update_pages()
+		{
+			pagemanager_cache();
+		}
+	}
+	$cache = null;
+	$cache = new MyPagemanagerCache;
 }
 
 function pagemanager_online(&$plugin_array)
