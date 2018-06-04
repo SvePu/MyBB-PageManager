@@ -186,7 +186,7 @@ function pagemanager_plugin_update()
 
 		if(!$db->field_exists('deviceselect', 'pages'))
 		{
-			$db->add_column("pages", "deviceselect", "text NOT NULL");
+			$db->add_column("pages", "deviceselect", "text NOT NULL AFTER `template`");
 			$db->update_query("pages", array('deviceselect' => 'all'));
 		}
 	}
