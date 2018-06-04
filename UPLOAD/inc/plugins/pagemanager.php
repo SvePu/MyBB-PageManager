@@ -51,7 +51,7 @@ else
 
 function pagemanager_info()
 {
-	global $db, $lang;
+	global $db, $lang, $plugins_cache;
 	$lang->load("config_pagemanager");
 
 	$editedby = '*Edited for MyBB 1.8 &amp; maintained by: <a href="https://community.mybb.com/user-91011.html" target="_blank">SvePu</a>';
@@ -70,7 +70,18 @@ function pagemanager_info()
 		'compatibility'	=>	'18*'
 		);
 
-	$info['description'] = $info['description'].'<br />'.$editedby.'<br />'.$sources;
+	$info_paypal = "";
+	if(is_array($plugins_cache) && is_array($plugins_cache['active']) && $plugins_cache['active']['pagemanager'])
+	{
+		$info_paypal = '<form action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;" target="_blank" />
+	<input type="hidden" name="cmd" value="_s-xclick" />
+	<input type="hidden" name="hosted_button_id" value="VGQ4ZDT8M7WS2" />
+	<input type="image" src="https://www.paypalobjects.com/webstatic/en_US/btn/btn_donate_pp_142x27.png" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!" />
+	<img alt="" border="0" src="https://www.paypalobjects.com/de_DE/i/scr/pixel.gif" width="1" height="1" />
+	</form>';
+	}
+
+	$info['description'] = $info_paypal.$info['description'].'<br />'.$editedby.'<br />'.$sources;
 
 	return $info;
 }
@@ -100,7 +111,7 @@ function pagemanager_install()
 			`groups` text NOT NULL,
 			`framework` int(1) NOT NULL default '0',
 			`template` text NOT NULL,
-			`deviceselect` varchar(10) NOT NULL default '',
+			`deviceselect` text NOT NULL,
 			`online` int(1) NOT NULL default '1',
 			`enabled` int(1) NOT NULL default '1',
 			`dateline` bigint(30) NOT NULL default '0',
@@ -165,10 +176,19 @@ function pagemanager_uninstall()
 function pagemanager_plugin_update()
 {
 	global $db;
-	if($db->table_exists('pages') && !$db->field_exists('groups', 'pages'))
+	if($db->table_exists('pages'))
 	{
-		$db->add_column("pages", "groups", "text NOT NULL");
-		$db->update_query("pages", array('groups' => '-1'));
+		if(!$db->field_exists('groups', 'pages'))
+		{
+			$db->add_column("pages", "groups", "text NOT NULL");
+			$db->update_query("pages", array('groups' => '-1'));
+		}
+
+		if(!$db->field_exists('deviceselect', 'pages'))
+		{
+			$db->add_column("pages", "deviceselect", "text NOT NULL");
+			$db->update_query("pages", array('deviceselect' => 'all'));
+		}
 	}
 }
 
@@ -473,7 +493,7 @@ function pagemanager_admin()
 					'groups'	=>	$selected_groups,
 					'framework'	=>	$form_array['framework'],
 					'template'	=>	$db->escape_string($form_array['template']),
-					'deviceselect'	=>	$form_array['deviceselect'],
+					'deviceselect'	=>	$db->escape_string($form_array['deviceselect']),
 					'online'	=>	$form_array['online'],
 					'enabled'	=>	$form_array['enabled'],
 					'dateline'	=>	TIME_NOW
@@ -730,7 +750,7 @@ function pagemanager_admin()
 					'groups'	=>	$selected_groups,
 					'framework'	=>	$form_array['framework'],
 					'template'	=>	$db->escape_string($form_array['template']),
-					'deviceselect'	=>	$form_array['deviceselect'],
+					'deviceselect'	=>	$db->escape_string($form_array['deviceselect']),
 					'online'	=>	$form_array['online'],
 					'enabled'	=>	$form_array['enabled'],
 					'dateline'	=>	$modified
@@ -992,23 +1012,22 @@ function pagemanager_admin()
 
 function pagemanager()
 {
-	global $mybb, $cache;
+	global $mybb, $cache, $lang;
+	$lang->load("pagemanager");
 	$pagecache = $cache->read('pages');
+
 	if($mybb->input['page'] && !isset($pagecache[$mybb->input['page']]))
 	{
-		global  $db, $lang;
-		$lang->load("pagemanager");
 		redirect("index.php", $lang->pagemanager_page_disabled_redirect, '', true);
 		exit();
 	}
 
 	if($mybb->input['page'] && isset($pagecache[$mybb->input['page']]))
 	{
-		global $db, $lang;
-		$lang->load("pagemanager");
+		global $db;
 		$query = $db->simple_select('pages','*','pid='.$pagecache[$mybb->input['page']]['pid']);
 		$pages = $db->fetch_array($query);
-		if($pages['groups'] == "-1" || is_member($pages['groups']))
+		if($pages && ($pages['groups'] == "-1" || is_member($pages['groups'])))
 		{
 			if($pages['deviceselect'] == 'mobile' && !is_mobile_device())
 			{
@@ -1022,7 +1041,7 @@ function pagemanager()
 			{
 				if($pages['framework'])
 				{
-					global $headerinclude,$header,$theme,$footer;
+					global $headerinclude, $header, $theme, $footer;
 					$template='<html>
 					<head>
 						<title>'.$pages['name'].' - '.$mybb->settings['bbname'].'</title>
