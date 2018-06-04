@@ -22,6 +22,16 @@
 *Check the PageManager option in ACP configuration after updating*
 
 -----------------------------------------
+**Enhanced Update:**
+* Download & unzip new plugin package
+* Deactivate plugin in ACP
+* Copy content from "UPLOAD" folder to the forum root on server - rewrite the older files
+* Activate the plugn in ACP
+* DONE!
+
+*Check the PageManager option in ACP configuration after updating*
+
+-----------------------------------------
 **Simple Update:**
 * Download & unzip new plugin package
 * Copy content from "UPLOAD" folder to the forum root on server - rewrite the older files
