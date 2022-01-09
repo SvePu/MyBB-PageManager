@@ -24,7 +24,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 }
 
-if(THIS_SCRIPT == 'misc.php')
+if(defined('THIS_SCRIPT') && THIS_SCRIPT == 'misc.php')
 {
 	global $mybb, $cache;
 	$pagecache = $cache->read('pages');
@@ -65,7 +65,7 @@ function pagemanager_info()
 		'website'	=>	'https://community.mybb.com/thread-208230.html',
 		'author'	=>	'Sebastian "querschlaeger" Wunderlich',
 		'authorsite'	=>	'',
-		'version'	=>	'2.1.3',
+		'version'	=>	'2.1.4',
 		'codename'	=>	'mybbpagemanager',
 		'compatibility'	=>	'18*'
 		);
@@ -108,7 +108,7 @@ function pagemanager_install()
 			`pid` int(10) unsigned NOT NULL auto_increment,
 			`name` varchar(120) NOT NULL default '',
 			`url` varchar(30) NOT NULL default '',
-			`groups` text NOT NULL,
+			`pagegroups` text NOT NULL,
 			`framework` int(1) NOT NULL default '0',
 			`template` text NOT NULL,
 			`deviceselect` text NOT NULL,
@@ -135,7 +135,7 @@ function pagemanager_is_installed()
 			'pid',
 			'name',
 			'url',
-			'groups',
+			'pagegroups',
 			'framework',
 			'template',
 			'deviceselect',
@@ -188,6 +188,11 @@ function pagemanager_plugin_update()
 		{
 			$db->add_column("pages", "deviceselect", "text NOT NULL AFTER `template`");
 			$db->update_query("pages", array('deviceselect' => 'all'));
+		}
+		
+		if($db->field_exists('groups', 'pages') && !$db->field_exists('pagegroups', 'pages'))
+		{
+			$db->rename_column("pages", "groups", "pagegroups", "text NOT NULL");
 		}
 	}
 }
@@ -320,14 +325,14 @@ function pagemanager_admin()
 				{
 					$online_status = $lang->no;
 				}
-				if($pages['groups'] == "-1")
+				if($pages['pagegroups'] == "-1")
 				{
 					$groups_allowed = $lang->all_groups;
 				}
 				else
 				{
 					$groups_allowed = $comma = '';
-					$groups = $db->simple_select("usergroups", "gid, title", "gid IN ({$pages['groups']})");
+					$groups = $db->simple_select("usergroups", "gid, title", "gid IN ({$pages['pagegroups']})");
 					while($gt = $db->fetch_array($groups))
 					{
 						$groups_allowed .= $comma.'<span style="cursor:pointer;" title="'.$gt['title'].'">'.$gt['gid'].'</span>';
@@ -490,7 +495,7 @@ function pagemanager_admin()
 				(
 					'name'		=>	$db->escape_string($form_array['name']),
 					'url'		=>	$db->escape_string($form_array['url']),
-					'groups'	=>	$selected_groups,
+					'pagegroups'=>	$selected_groups,
 					'framework'	=>	$form_array['framework'],
 					'template'	=>	$db->escape_string($form_array['template']),
 					'deviceselect'	=>	$db->escape_string($form_array['deviceselect']),
@@ -719,7 +724,7 @@ function pagemanager_admin()
 				{
 					$selected_groups = '-1';
 				}
-				if($form_array['name'] == $pages['name'] && $form_array['url'] == $pages['url'] && 	$form_array['framework'] == $pages['framework'] && $form_array['template'] == $pages['template'] && $form_array['deviceselect'] == $pages['deviceselect'] && $form_array['online'] == $pages['online'] && $pages['groups'] == $selected_groups)
+				if($form_array['name'] == $pages['name'] && $form_array['url'] == $pages['url'] && 	$form_array['framework'] == $pages['framework'] && $form_array['template'] == $pages['template'] && $form_array['deviceselect'] == $pages['deviceselect'] && $form_array['online'] == $pages['online'] && $pages['pagegroups'] == $selected_groups)
 				{
 					$modified = $pages['dateline'];
 					if($form_array['enabled'] == $pages['enabled'])
@@ -747,7 +752,7 @@ function pagemanager_admin()
 				(
 					'name'		=>	$db->escape_string($form_array['name']),
 					'url'		=>	$db->escape_string($form_array['url']),
-					'groups'	=>	$selected_groups,
+					'pagegroups'=>	$selected_groups,
 					'framework'	=>	$form_array['framework'],
 					'template'	=>	$db->escape_string($form_array['template']),
 					'deviceselect'	=>	$db->escape_string($form_array['deviceselect']),
@@ -771,9 +776,9 @@ function pagemanager_admin()
 		else
 		{
 			$form_array = pagemanager_setinput($pages);
-			$mybb->input['group_1_groups'] = explode(",", $pages['groups']);
+			$mybb->input['group_1_groups'] = explode(",", $pages['pagegroups']);
 
-			if(!$pages['groups'] || $pages['groups'] == -1)
+			if(!$pages['pagegroups'] || $pages['pagegroups'] == -1)
 			{
 				$group_checked[1] = "checked=\"checked\"";
 				$group_checked[2] = '';
@@ -1027,7 +1032,7 @@ function pagemanager()
 		global $db;
 		$query = $db->simple_select('pages','*','pid='.$pagecache[$mybb->input['page']]['pid']);
 		$pages = $db->fetch_array($query);
-		if($pages && ($pages['groups'] == "-1" || is_member($pages['groups'])))
+		if($pages && ($pages['pagegroups'] == "-1" || is_member($pages['pagegroups'])))
 		{
 			if($pages['deviceselect'] == 'mobile' && !is_mobile_device())
 			{
@@ -1128,7 +1133,7 @@ function pagemanager_cache($clear=false, $deinst=false)
 	{
 		global $db;
 		$pages = array();
-		$query = $db->simple_select('pages','pid,name,url,groups,deviceselect,online','enabled=1');
+		$query = $db->simple_select('pages','pid,name,url,pagegroups,deviceselect,online','enabled=1');
 		while($page = $db->fetch_array($query))
 		{
 			$pages[$page['url']] = $page;
@@ -1143,7 +1148,7 @@ function pagemanager_setinput($input=false, $import=false)
 	(
 		'name'		=>	'',
 		'url'		=>	'',
-		'groups'	=>	'-1',
+		'pagegroups'	=>	'-1',
 		'framework'	=>	0,
 		'template'	=>	'',
 		'deviceselect'	=>	'all',
