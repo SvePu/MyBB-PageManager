@@ -90,3 +90,11 @@ $l['pagemanager_delete_success']='The selected page has been deleted successfull
 $l['pagemanager_invalid_page']='The specified page does not exist.';
 $l['pagemanager_install_error']='Your installation of Page Manager is out of date or corrupt. If possible export all pages and install the plugin again.';
 $l['pagemanager_can_manage_pages']='Can manage additional pages?';
+
+// Plugin Delete Action
+$l['delete_pagemanager_link'] = "Delete plugin files";
+$l['pagemanager_delete_confirm'] = "Run plugin files deleting";
+$l['pagemanager_delete_confirm_message'] = "Do you want to remove the plugin files permanently and completely from the server?";
+$l['pagemanager_delete_message'] = "The plugin files have been completely removed from the server.";
+$l['pagemanager_undelete_message'] = "The plugin files could not be deleted because there is a problem with the required CSV file!";
+$l['pagemanager_still_installed'] = "The plugin is still installed and must be uninstalled before deleting it!";
